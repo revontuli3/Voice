@@ -31,7 +31,6 @@ import voice.core.data.store.CurrentBookStore
 import voice.core.data.store.GridModeStore
 import voice.core.featureflag.ExperimentalPlaybackPersistenceQualifier
 import voice.core.featureflag.FeatureFlag
-import voice.core.featureflag.FolderPickerInSettingsFeatureFlagQualifier
 import voice.core.playback.LivePlaybackState
 import voice.core.playback.PlayerController
 import voice.core.playback.overlay
@@ -62,8 +61,6 @@ class BookOverviewViewModel(
   private val search: BookSearch,
   private val contentRepo: BookContentRepo,
   private val deviceHasStoragePermissionBug: DeviceHasStoragePermissionBug,
-  @FolderPickerInSettingsFeatureFlagQualifier
-  private val folderPickerInSettingsFeatureFlag: FeatureFlag<Boolean>,
   @ExperimentalPlaybackPersistenceQualifier
   private val experimentalPlaybackPersistenceFeatureFlag: FeatureFlag<Boolean>,
 ) {
@@ -146,7 +143,6 @@ class BookOverviewViewModel(
       searchActive = searchActive,
       searchViewState = bookSearchViewState,
       showStoragePermissionBugCard = hasStoragePermissionBug,
-      showFolderPickerIcon = !folderPickerInSettingsFeatureFlag.get(),
     )
   }
 
@@ -199,10 +195,6 @@ class BookOverviewViewModel(
 
   fun onBookClick(id: BookId) {
     navigator.goTo(Destination.Playback(id))
-  }
-
-  fun onBookFolderClick() {
-    navigator.goTo(Destination.FolderPicker)
   }
 
   fun onSearchActiveChange(active: Boolean) {

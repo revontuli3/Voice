@@ -99,7 +99,6 @@ fun BookOverviewScreen(modifier: Modifier = Modifier) {
       bottomSheetViewModel.bookSelected(bookId)
       showBottomSheet = true
     },
-    onBookFolderClick = bookOverviewViewModel::onBookFolderClick,
     onPlayButtonClick = bookOverviewViewModel::playPause,
     onSearchActiveChange = bookOverviewViewModel::onSearchActiveChange,
     onSearchQueryChange = bookOverviewViewModel::onSearchQueryChange,
@@ -158,7 +157,6 @@ internal fun BookOverview(
   onSettingsClick: () -> Unit,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
-  onBookFolderClick: () -> Unit,
   onPlayButtonClick: () -> Unit,
   onSearchActiveChange: (Boolean) -> Unit,
   onSearchQueryChange: (String) -> Unit,
@@ -172,7 +170,6 @@ internal fun BookOverview(
     topBar = {
       BookOverviewTopBar(
         viewState = viewState,
-        onBookFolderClick = onBookFolderClick,
         onSettingsClick = onSettingsClick,
         onActiveChange = onSearchActiveChange,
         onQueryChange = onSearchQueryChange,
@@ -234,7 +231,6 @@ fun BookOverviewPreview(
       onSettingsClick = {},
       onBookClick = {},
       onBookLongClick = {},
-      onBookFolderClick = {},
       onPlayButtonClick = {},
       onSearchActiveChange = {},
       onSearchQueryChange = {},
@@ -289,7 +285,6 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
         query = "",
       ),
       showStoragePermissionBugCard = false,
-      showFolderPickerIcon = true,
     ),
   )
 }

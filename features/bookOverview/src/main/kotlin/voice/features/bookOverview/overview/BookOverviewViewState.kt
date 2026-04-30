@@ -16,7 +16,6 @@ data class BookOverviewViewState(
   val searchActive: Boolean,
   val searchViewState: BookSearchViewState,
   val showStoragePermissionBugCard: Boolean,
-  val showFolderPickerIcon: Boolean,
 ) {
 
   companion object {
@@ -34,7 +33,6 @@ data class BookOverviewViewState(
         query = "",
       ),
       showStoragePermissionBugCard = false,
-      showFolderPickerIcon = true,
     )
   }
 

@@ -190,7 +190,6 @@ class ScreenshotCapture {
       searchActive = false,
       searchViewState = BookSearchViewState.EmptySearch(emptyList(), emptyList(), ""),
       showStoragePermissionBugCard = false,
-      showFolderPickerIcon = true,
     )
   }
 }

@@ -25,7 +25,6 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 internal fun BookOverviewTopBar(
   viewState: BookOverviewViewState,
-  onBookFolderClick: () -> Unit,
   onSettingsClick: () -> Unit,
   onActiveChange: (Boolean) -> Unit,
   onQueryChange: (String) -> Unit,
@@ -40,12 +39,10 @@ internal fun BookOverviewTopBar(
       horizontalPadding = horizontalPadding,
       onQueryChange = onQueryChange,
       onActiveChange = onActiveChange,
-      onBookFolderClick = onBookFolderClick,
       onSettingsClick = onSettingsClick,
       onSearchBookClick = onSearchBookClick,
       searchActive = viewState.searchActive,
       showAddBookHint = viewState.showAddBookHint,
-      showFolderPickerIcon = viewState.showFolderPickerIcon,
       searchViewState = viewState.searchViewState,
     )
     var showLoading by remember { mutableStateOf(false) }
@@ -84,9 +81,7 @@ private fun BookOverviewTopBarPreview() {
           query = "",
         ),
         showStoragePermissionBugCard = false,
-        showFolderPickerIcon = true,
       ),
-      onBookFolderClick = {},
       onSettingsClick = {},
       onActiveChange = {},
       onQueryChange = {},

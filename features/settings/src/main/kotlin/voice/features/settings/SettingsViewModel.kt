@@ -26,8 +26,6 @@ import voice.core.data.store.DeveloperMenuUnlockedStore
 import voice.core.data.store.GridModeStore
 import voice.core.data.store.SeekTimeStore
 import voice.core.data.store.SleepTimerPreferenceStore
-import voice.core.featureflag.FeatureFlag
-import voice.core.featureflag.FolderPickerInSettingsFeatureFlagQualifier
 import voice.core.ui.DARK_THEME_SETTABLE
 import voice.core.ui.GridCount
 import voice.navigation.Destination
@@ -51,8 +49,6 @@ class SettingsViewModel(
   @AnalyticsConsentStore
   private val analyticsConsentStore: DataStore<Boolean>,
   private val gridCount: GridCount,
-  @FolderPickerInSettingsFeatureFlagQualifier
-  private val folderPickerInSettingsFeatureFlag: FeatureFlag<Boolean>,
   @DeveloperMenuUnlockedStore
   private val developerMenuUnlockedStore: DataStore<Boolean>,
   dispatcherProvider: DispatcherProvider,
@@ -74,9 +70,6 @@ class SettingsViewModel(
       initial = SleepTimerPreference.Default,
     )
     val analyticsEnabled by remember { analyticsConsentStore.data }.collectAsState(initial = false)
-    val showFolderPickerEntry = remember {
-      folderPickerInSettingsFeatureFlag.get()
-    }
     val showDeveloperMenu by remember { developerMenuUnlockedStore.data }.collectAsState(initial = false)
     return SettingsViewState(
       useDarkTheme = useDarkTheme,
@@ -97,7 +90,7 @@ class SettingsViewModel(
       ),
       analyticsEnabled = analyticsEnabled,
       showAnalyticSetting = appInfoProvider.analyticsIncluded,
-      showFolderPickerEntry = showFolderPickerEntry,
+      showFolderPickerEntry = true,
       showDeveloperMenu = showDeveloperMenu,
     )
   }

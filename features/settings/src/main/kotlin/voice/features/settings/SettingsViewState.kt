@@ -35,7 +35,7 @@ data class SettingsViewState(
         autoSleepTimer = AutoSleepTimerViewState.preview(),
         analyticsEnabled = false,
         showAnalyticSetting = true,
-        showFolderPickerEntry = false,
+        showFolderPickerEntry = true,
         showDeveloperMenu = true,
       )
     }
