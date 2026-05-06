@@ -18,11 +18,12 @@ import voice.core.ui.R as UiR
 
 @Composable
 internal fun Cover(
+  modifier: Modifier = Modifier,
   onDoubleClick: () -> Unit,
   cover: ImmutableFile?,
 ) {
   AsyncImage(
-    modifier = Modifier
+    modifier = modifier
       .fillMaxSize()
       .pointerInput(Unit) {
         detectTapGestures(

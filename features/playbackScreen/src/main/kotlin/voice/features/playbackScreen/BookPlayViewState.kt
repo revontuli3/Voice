@@ -11,6 +11,7 @@ data class BookPlayViewState(
   val chapterName: String?,
   val showPreviousNextButtons: Boolean,
   val title: String,
+  val author: String?,
   val sleepTimerState: SleepTimerViewState,
   val playedTime: Duration,
   val duration: Duration,

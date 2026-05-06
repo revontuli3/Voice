@@ -27,7 +27,7 @@ internal fun PlaybackRow(
     SkipButton(forward = false, onClick = onRewindClick)
     Spacer(modifier = Modifier.size(16.dp))
 
-    PlayButton(playing = playing, fabSize = 80.dp, iconSize = 36.dp, onPlayClick = onPlayClick)
+    PlayButton(playing = playing, fabSize = 72.dp, iconSize = 32.dp, onPlayClick = onPlayClick)
     Spacer(modifier = Modifier.size(16.dp))
     SkipButton(forward = true, onClick = onFastForwardClick)
   }

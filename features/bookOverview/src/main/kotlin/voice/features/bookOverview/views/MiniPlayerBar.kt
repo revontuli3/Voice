@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Forward10
+import androidx.compose.material.icons.outlined.FastForward
+import androidx.compose.material.icons.outlined.FastRewind
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Replay10
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,7 +93,7 @@ internal fun MiniPlayerBar(
       Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = onRewindClick) {
           Icon(
-            imageVector = Icons.Outlined.Replay10,
+            imageVector = Icons.Outlined.FastRewind,
             contentDescription = null,
           )
         }
@@ -105,7 +105,7 @@ internal fun MiniPlayerBar(
         }
         IconButton(onClick = onFastForwardClick) {
           Icon(
-            imageVector = Icons.Outlined.Forward10,
+            imageVector = Icons.Outlined.FastForward,
             contentDescription = null,
           )
         }

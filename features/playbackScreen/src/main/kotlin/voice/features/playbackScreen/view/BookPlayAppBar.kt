@@ -12,7 +12,6 @@ import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -74,19 +73,8 @@ internal fun BookPlayAppBar(
       onVolumeBoostClick = onVolumeBoostClick,
     )
   }
-  if (useLandscapeLayout) {
-    TopAppBar(
-      actions = appBarActions,
-      title = {
-        AppBarTitle(viewState.title)
-      },
-    )
-  } else {
-    LargeTopAppBar(
-      actions = appBarActions,
-      title = {
-        AppBarTitle(viewState.title)
-      },
-    )
-  }
+  TopAppBar(
+    actions = appBarActions,
+    title = { },
+  )
 }

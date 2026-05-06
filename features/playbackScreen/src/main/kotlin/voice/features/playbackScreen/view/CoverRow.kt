@@ -2,6 +2,8 @@ package voice.features.playbackScreen.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -24,7 +26,13 @@ internal fun CoverRow(
   modifier: Modifier = Modifier,
 ) {
   Box(modifier) {
-    Cover(onDoubleClick = onPlayClick, cover = cover)
+    Cover(
+      modifier = Modifier
+        .fillMaxSize()
+        .aspectRatio(1f),
+      onDoubleClick = onPlayClick,
+      cover = cover,
+    )
     when (sleepTimerState) {
       BookPlayViewState.SleepTimerViewState.Disabled -> {
       }

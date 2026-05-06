@@ -5,13 +5,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import voice.features.playbackScreen.BookPlayViewState
 import kotlin.time.Duration
 
@@ -35,7 +43,8 @@ internal fun BookPlayContent(
         onPlayClick = onPlayClick,
         sleepTimerState = viewState.sleepTimerState,
         modifier = Modifier
-          .fillMaxHeight()
+          .fillMaxWidth()
+          .aspectRatio(1f)
           .weight(1F)
           .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
       )
@@ -45,6 +54,18 @@ internal fun BookPlayContent(
           .weight(1F),
         verticalArrangement = Arrangement.Center,
       ) {
+        Text(
+          text = viewState.title,
+          style = MaterialTheme.typography.titleMedium,
+        )
+        viewState.author?.let { author ->
+          Text(
+            text = author.toUpperCase(LocaleList.current),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+        Spacer(modifier = Modifier.size(12.dp))
         viewState.chapterName?.let { chapterName ->
           ChapterRow(
             chapterName = chapterName,
@@ -70,18 +91,42 @@ internal fun BookPlayContent(
       }
     }
   } else {
-    Column(Modifier.padding(contentPadding)) {
+    Column(
+      Modifier
+        .padding(contentPadding)
+        .verticalScroll(rememberScrollState())
+        .navigationBarsPadding(),
+    ) {
       CoverRow(
         onPlayClick = onPlayClick,
         cover = viewState.cover,
         sleepTimerState = viewState.sleepTimerState,
         modifier = Modifier
           .fillMaxWidth()
-          .weight(1F)
-          .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+          .padding(start = 16.dp, end = 16.dp, top = 0.dp)
+          .aspectRatio(1f),
       )
+      Spacer(modifier = Modifier.size(8.dp))
+      Text(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 16.dp),
+        text = viewState.title,
+        style = MaterialTheme.typography.titleMedium,
+      )
+      viewState.author?.let { author ->
+        Spacer(modifier = Modifier.size(0.dp))
+        Text(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+          text = author.toUpperCase(LocaleList.current),
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
       viewState.chapterName?.let { chapterName ->
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(8.dp))
         ChapterRow(
           chapterName = chapterName,
           nextPreviousVisible = viewState.showPreviousNextButtons,
@@ -90,7 +135,7 @@ internal fun BookPlayContent(
           onCurrentChapterClick = onCurrentChapterClick,
         )
       }
-      Spacer(modifier = Modifier.size(20.dp))
+      Spacer(modifier = Modifier.size(12.dp))
       SliderRow(
         duration = viewState.duration,
         playedTime = viewState.playedTime,
@@ -103,7 +148,7 @@ internal fun BookPlayContent(
         onRewindClick = onRewindClick,
         onFastForwardClick = onFastForwardClick,
       )
-      Spacer(modifier = Modifier.size(24.dp))
+      Spacer(modifier = Modifier.size(16.dp))
     }
   }
 }

@@ -113,6 +113,13 @@ internal fun ListBookRow(
             .padding(start = 12.dp)
             .weight(1f),
         ) {
+          Text(
+            text = book.name,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 2,
+          )
+
           if (book.author != null) {
             Text(
               text = book.author.toUpperCase(LocaleList.current),
@@ -121,13 +128,6 @@ internal fun ListBookRow(
               maxLines = 1,
             )
           }
-
-          Text(
-            text = book.name,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-          )
 
           Row(
             modifier = Modifier
