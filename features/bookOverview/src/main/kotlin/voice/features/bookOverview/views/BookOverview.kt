@@ -33,7 +33,6 @@ import dev.zacsweers.metro.Provides
 import kotlinx.coroutines.launch
 import voice.core.common.rootGraphAs
 import voice.core.data.BookId
-import voice.core.ui.PlayButton
 import voice.core.ui.VoiceTheme
 import voice.features.bookOverview.bottomSheet.BottomSheetContent
 import voice.features.bookOverview.bottomSheet.BottomSheetItem
@@ -100,6 +99,9 @@ fun BookOverviewScreen(modifier: Modifier = Modifier) {
       showBottomSheet = true
     },
     onPlayButtonClick = bookOverviewViewModel::playPause,
+    onRewindClick = bookOverviewViewModel::rewind,
+    onFastForwardClick = bookOverviewViewModel::fastForward,
+    onMiniPlayerClick = bookOverviewViewModel::onBookClick,
     onSearchActiveChange = bookOverviewViewModel::onSearchActiveChange,
     onSearchQueryChange = bookOverviewViewModel::onSearchQueryChange,
     onSearchBookClick = bookOverviewViewModel::onSearchBookClick,
@@ -158,6 +160,9 @@ internal fun BookOverview(
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
   onPlayButtonClick: () -> Unit,
+  onRewindClick: () -> Unit,
+  onFastForwardClick: () -> Unit,
+  onMiniPlayerClick: (BookId) -> Unit,
   onSearchActiveChange: (Boolean) -> Unit,
   onSearchQueryChange: (String) -> Unit,
   onSearchBookClick: (BookId) -> Unit,
@@ -176,14 +181,16 @@ internal fun BookOverview(
         onSearchBookClick = onSearchBookClick,
       )
     },
-    floatingActionButton = {
-      if (viewState.playButtonState != null) {
-        PlayButton(
+    bottomBar = {
+      val miniPlayer = viewState.miniPlayer
+      if (miniPlayer != null) {
+        MiniPlayerBar(
           modifier = Modifier.navigationBarsPadding(),
-          playing = viewState.playButtonState == BookOverviewViewState.PlayButtonState.Playing,
-          fabSize = 56.dp,
-          iconSize = 24.dp,
-          onPlayClick = onPlayButtonClick,
+          state = miniPlayer,
+          onClick = { onMiniPlayerClick(miniPlayer.bookId) },
+          onRewindClick = onRewindClick,
+          onPlayPauseClick = onPlayButtonClick,
+          onFastForwardClick = onFastForwardClick,
         )
       }
     },
@@ -232,6 +239,9 @@ fun BookOverviewPreview(
       onBookClick = {},
       onBookLongClick = {},
       onPlayButtonClick = {},
+      onRewindClick = {},
+      onFastForwardClick = {},
+      onMiniPlayerClick = {},
       onSearchActiveChange = {},
       onSearchQueryChange = {},
       onSearchBookClick = {},
@@ -275,6 +285,7 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
       ),
       layoutMode = BookOverviewLayoutMode.List,
       playButtonState = BookOverviewViewState.PlayButtonState.Paused,
+      miniPlayer = null,
       showAddBookHint = false,
       showSearchIcon = true,
       isLoading = true,

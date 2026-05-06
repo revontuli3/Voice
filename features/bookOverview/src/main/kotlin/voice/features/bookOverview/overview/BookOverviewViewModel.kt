@@ -19,11 +19,14 @@ import androidx.datastore.core.DataStore
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import voice.core.common.comparator.sortedNaturally
 import voice.core.data.Book
 import voice.core.data.BookId
 import voice.core.data.GridMode
+import voice.core.data.durationMs
+import voice.core.data.markForPosition
 import voice.core.data.repo.BookContentRepo
 import voice.core.data.repo.BookRepository
 import voice.core.data.repo.internals.dao.RecentBookSearchDao
@@ -39,10 +42,12 @@ import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
 import voice.core.ui.GridCount
+import voice.core.ui.ImmutableFile
 import voice.features.bookOverview.di.BookOverviewScope
 import voice.features.bookOverview.search.BookSearchViewState
 import voice.navigation.Destination
 import voice.navigation.Navigator
+import kotlin.time.Duration.Companion.milliseconds
 
 @SingleIn(BookOverviewScope::class)
 @Inject
@@ -111,6 +116,37 @@ class BookOverviewViewModel(
       remember { mutableStateOf(null) }
     }
 
+    val currentBook: Book? = if (currentBookId != null) {
+      remember(currentBookId) {
+        repo.flow(currentBookId).filterNotNull()
+      }.collectAsState(initial = null).value
+    } else {
+      null
+    }
+
+    val miniPlayer = if (currentBook != null) {
+      val liveState = livePlaybackState.value
+      val book = if (experimentalPlaybackPersistence && liveState != null) {
+        currentBook.overlay(liveState)
+      } else {
+        currentBook
+      }
+      val isPlaying = liveState?.isPlaying ?: (playState == PlayStateManager.PlayState.Playing)
+      val currentMark = book.currentChapter.markForPosition(book.content.positionInChapter)
+      val durationMs = currentMark.durationMs.coerceAtLeast(1)
+      val playedTimeMs = (book.content.positionInChapter - currentMark.startMs).coerceIn(0L, durationMs)
+      MiniPlayerViewState(
+        bookId = book.id,
+        cover = book.content.cover?.let(::ImmutableFile),
+        chapterName = currentMark.name,
+        playedTime = playedTimeMs.milliseconds,
+        duration = durationMs.milliseconds,
+        playing = isPlaying,
+      )
+    } else {
+      null
+    }
+
     return BookOverviewViewState(
       layoutMode = layoutMode,
       books = books
@@ -133,6 +169,7 @@ class BookOverviewViewModel(
       } else {
         BookOverviewViewState.PlayButtonState.Paused
       }.takeIf { currentBookId != null },
+      miniPlayer = miniPlayer,
       showAddBookHint = if (hasStoragePermissionBug) {
         false
       } else {
@@ -221,6 +258,14 @@ class BookOverviewViewModel(
 
   fun playPause() {
     playerController.playPause()
+  }
+
+  fun rewind() {
+    playerController.rewind()
+  }
+
+  fun fastForward() {
+    playerController.fastForward()
   }
 
   fun onPermissionBugCardClick() {
