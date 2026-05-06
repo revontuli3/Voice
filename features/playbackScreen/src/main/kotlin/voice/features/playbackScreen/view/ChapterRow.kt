@@ -1,14 +1,13 @@
 package voice.features.playbackScreen.view
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material3.Icon
@@ -54,22 +53,15 @@ internal fun ChapterRow(
       horizontalArrangement = Arrangement.Center,
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      if (nextPreviousVisible) {
-        Spacer(modifier = Modifier.size(28.dp))
-      }
       Text(
-        modifier = Modifier.padding(horizontal = 4.dp),
+        modifier = Modifier
+          .padding(horizontal = 4.dp)
+          .basicMarquee(),
         text = chapterName,
         style = MaterialTheme.typography.bodyLarge,
         textAlign = TextAlign.Center,
+        maxLines = 1,
       )
-      if (nextPreviousVisible) {
-        Icon(
-          modifier = Modifier.size(28.dp),
-          imageVector = Icons.Outlined.ExpandMore,
-          contentDescription = stringResource(id = R.string.next_track),
-        )
-      }
     }
     if (nextPreviousVisible) {
       IconButton(onClick = onSkipToNext) {
