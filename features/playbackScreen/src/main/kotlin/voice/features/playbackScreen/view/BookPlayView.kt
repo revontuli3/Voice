@@ -29,7 +29,6 @@ internal fun BookPlayView(
   onVolumeBoostClick: () -> Unit,
   onSkipToNext: () -> Unit,
   onSkipToPrevious: () -> Unit,
-  onCloseClick: () -> Unit,
   onCurrentChapterClick: () -> Unit,
   snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
@@ -46,7 +45,6 @@ internal fun BookPlayView(
         onSpeedChangeClick = onSpeedChangeClick,
         onSkipSilenceClick = onSkipSilenceClick,
         onVolumeBoostClick = onVolumeBoostClick,
-        onCloseClick = onCloseClick,
         useLandscapeLayout = useLandscapeLayout,
       )
     },
@@ -88,7 +86,6 @@ private fun BookPlayPreview(
       onVolumeBoostClick = {},
       onSkipToNext = {},
       onSkipToPrevious = {},
-      onCloseClick = {},
       onCurrentChapterClick = {},
       useLandscapeLayout = false,
     )

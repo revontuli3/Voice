@@ -33,7 +33,6 @@ internal fun BookPlayAppBar(
   onSpeedChangeClick: () -> Unit,
   onSkipSilenceClick: () -> Unit,
   onVolumeBoostClick: () -> Unit,
-  onCloseClick: () -> Unit,
   useLandscapeLayout: Boolean,
 ) {
   val appBarActions: @Composable RowScope.() -> Unit = {
@@ -77,9 +76,6 @@ internal fun BookPlayAppBar(
   }
   if (useLandscapeLayout) {
     TopAppBar(
-      navigationIcon = {
-        CloseIcon(onCloseClick)
-      },
       actions = appBarActions,
       title = {
         AppBarTitle(viewState.title)
@@ -87,9 +83,6 @@ internal fun BookPlayAppBar(
     )
   } else {
     LargeTopAppBar(
-      navigationIcon = {
-        CloseIcon(onCloseClick)
-      },
       actions = appBarActions,
       title = {
         AppBarTitle(viewState.title)

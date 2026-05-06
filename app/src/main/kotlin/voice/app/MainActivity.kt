@@ -5,9 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.core.net.toUri
@@ -63,7 +67,11 @@ class MainActivity : AppCompatActivity() {
         val dialogStrategy = remember { DialogSceneStrategy<Destination.Compose>() }
 
         NavDisplay(
-          backStack = backStack,
+          backStack = if (backStack.lastOrNull() is Destination.Playback) {
+            backStack.dropLast(1)
+          } else {
+            backStack
+          },
           sceneStrategies = listOf(dialogStrategy),
           onBack = {
             if (backStack.size > 1) {
@@ -74,6 +82,37 @@ class MainActivity : AppCompatActivity() {
             navEntryResolver.create(key)
           },
         )
+
+        val playbackDestination = backStack.lastOrNull() as? Destination.Playback
+        if (playbackDestination != null) {
+          BackHandler {
+            if (backStack.size > 1) {
+              backStack.removeLastOrNull()
+            }
+          }
+
+          val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+          ModalBottomSheet(
+            sheetState = sheetState,
+            onDismissRequest = {
+              if (backStack.size > 1) {
+                backStack.removeLastOrNull()
+              }
+            },
+            dragHandle = { BottomSheetDefaults.DragHandle() },
+          ) {
+            @Suppress("UNCHECKED_CAST")
+            val playbackBackStack = rememberNavBackStack(playbackDestination) as MutableList<Destination.Compose>
+            NavDisplay(
+              backStack = playbackBackStack,
+              sceneStrategies = listOf(dialogStrategy),
+              onBack = { },
+              entryProvider = { key ->
+                navEntryResolver.create(key)
+              },
+            )
+          }
+        }
 
         LaunchedEffect(navigator) {
           navigator.navigationCommands.collect { command ->

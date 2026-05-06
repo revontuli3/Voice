@@ -230,10 +230,6 @@ class BookPlayViewModel(
     player.fastForward()
   }
 
-  fun onCloseClick() {
-    navigator.goBack()
-  }
-
   fun onCurrentChapterClick() {
     scope.launch {
       val book = currentBook() ?: return@launch
