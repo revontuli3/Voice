@@ -58,7 +58,8 @@ class VoicePlayerTest {
     )
   }
 
-  private val seekTimeStore = MemoryDataStore(2)
+  private val rewindSecondsStore = MemoryDataStore(2)
+  private val fastForwardSecondsStore = MemoryDataStore(2)
 
   private val internalPlayer = TestExoPlayerBuilder(ApplicationProvider.getApplicationContext())
     .setMediaSourceFactory(
@@ -97,7 +98,8 @@ class VoicePlayerTest {
     currentBookStoreId = mockk {
       every { data } returns flowOf(bookId)
     },
-    seekTimeStore = seekTimeStore,
+    rewindSecondsStore = rewindSecondsStore,
+    fastForwardSecondsStore = fastForwardSecondsStore,
     autoRewindAmountStore = mockk(),
     scope = scope,
     chapterRepo = mockk {
@@ -126,7 +128,7 @@ class VoicePlayerTest {
       ),
     )
 
-    seekTimeStore.updateData { 7 }
+    fastForwardSecondsStore.updateData { 7 }
 
     player.prepare()
     awaitReady()
@@ -166,7 +168,7 @@ class VoicePlayerTest {
       ),
     )
 
-    seekTimeStore.updateData { 5 }
+    rewindSecondsStore.updateData { 5 }
 
     player.seekTo(1, 12_000)
     player.prepare()

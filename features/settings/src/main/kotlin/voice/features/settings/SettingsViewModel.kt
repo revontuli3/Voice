@@ -23,8 +23,9 @@ import voice.core.data.store.AnalyticsConsentStore
 import voice.core.data.store.AutoRewindAmountStore
 import voice.core.data.store.DarkThemeStore
 import voice.core.data.store.DeveloperMenuUnlockedStore
+import voice.core.data.store.FastForwardSecondsStore
 import voice.core.data.store.GridModeStore
-import voice.core.data.store.SeekTimeStore
+import voice.core.data.store.RewindSecondsStore
 import voice.core.data.store.SleepTimerPreferenceStore
 import voice.core.ui.DARK_THEME_SETTABLE
 import voice.core.ui.GridCount
@@ -38,8 +39,10 @@ class SettingsViewModel(
   private val useDarkThemeStore: DataStore<Boolean>,
   @AutoRewindAmountStore
   private val autoRewindAmountStore: DataStore<Int>,
-  @SeekTimeStore
-  private val seekTimeStore: DataStore<Int>,
+  @RewindSecondsStore
+  private val rewindSecondsStore: DataStore<Int>,
+  @FastForwardSecondsStore
+  private val fastForwardSecondsStore: DataStore<Int>,
   private val navigator: Navigator,
   private val appInfoProvider: AppInfoProvider,
   @GridModeStore
@@ -64,7 +67,8 @@ class SettingsViewModel(
   fun viewState(): SettingsViewState {
     val useDarkTheme by remember { useDarkThemeStore.data }.collectAsState(initial = false)
     val autoRewindAmount by remember { autoRewindAmountStore.data }.collectAsState(initial = 0)
-    val seekTime by remember { seekTimeStore.data }.collectAsState(initial = 0)
+    val rewindSeconds by remember { rewindSecondsStore.data }.collectAsState(initial = 0)
+    val fastForwardSeconds by remember { fastForwardSecondsStore.data }.collectAsState(initial = 0)
     val gridMode by remember { gridModeStore.data }.collectAsState(initial = GridMode.GRID)
     val autoSleepTimer by remember { sleepTimerPreferenceStore.data }.collectAsState(
       initial = SleepTimerPreference.Default,
@@ -74,7 +78,8 @@ class SettingsViewModel(
     return SettingsViewState(
       useDarkTheme = useDarkTheme,
       showDarkThemePref = DARK_THEME_SETTABLE,
-      seekTimeInSeconds = seekTime,
+      rewindSecondsInSeconds = rewindSeconds,
+      fastForwardSecondsInSeconds = fastForwardSeconds,
       autoRewindInSeconds = autoRewindAmount,
       dialog = dialog.value,
       appVersion = appInfoProvider.versionName,
@@ -121,14 +126,24 @@ class SettingsViewModel(
     }
   }
 
-  override fun seekAmountChanged(seconds: Int) {
+  override fun rewindSecondsChanged(seconds: Int) {
     mainScope.launch {
-      seekTimeStore.updateData { seconds }
+      rewindSecondsStore.updateData { seconds }
     }
   }
 
-  override fun onSeekAmountRowClick() {
-    dialog.value = SettingsViewState.Dialog.SeekTime
+  override fun onRewindSecondsRowClick() {
+    dialog.value = SettingsViewState.Dialog.RewindSeconds
+  }
+
+  override fun fastForwardSecondsChanged(seconds: Int) {
+    mainScope.launch {
+      fastForwardSecondsStore.updateData { seconds }
+    }
+  }
+
+  override fun onFastForwardSecondsRowClick() {
+    dialog.value = SettingsViewState.Dialog.FastForwardSeconds
   }
 
   override fun autoRewindAmountChang(seconds: Int) {

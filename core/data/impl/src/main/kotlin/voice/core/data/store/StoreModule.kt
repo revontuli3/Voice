@@ -87,6 +87,34 @@ public interface StoreModule {
 
   @Provides
   @SingleIn(AppScope::class)
+  @RewindSecondsStore
+  private fun rewindSeconds(
+    factory: VoiceDataStoreFactory,
+    sharedPreferences: SharedPreferences,
+  ): DataStore<Int> {
+    return factory.int(
+      fileName = "rewindSeconds",
+      defaultValue = 10,
+      migrations = listOf(intPrefsDataMigration(sharedPreferences, "SEEK_TIME")),
+    )
+  }
+
+  @Provides
+  @SingleIn(AppScope::class)
+  @FastForwardSecondsStore
+  private fun fastForwardSeconds(
+    factory: VoiceDataStoreFactory,
+    sharedPreferences: SharedPreferences,
+  ): DataStore<Int> {
+    return factory.int(
+      fileName = "fastForwardSeconds",
+      defaultValue = 30,
+      migrations = listOf(intPrefsDataMigration(sharedPreferences, "SEEK_TIME")),
+    )
+  }
+
+  @Provides
+  @SingleIn(AppScope::class)
   @SleepTimerPreferenceStore
   private fun sleepTimerPreference(factory: VoiceDataStoreFactory): DataStore<SleepTimerPreference> {
     return factory.create(

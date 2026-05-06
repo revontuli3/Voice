@@ -152,8 +152,14 @@ private fun Settings(
       }
 
       item {
-        SeekTimeRow(viewState.seekTimeInSeconds) {
-          listener.onSeekAmountRowClick()
+        RewindSecondsRow(viewState.rewindSecondsInSeconds) {
+          listener.onRewindSecondsRowClick()
+        }
+      }
+
+      item {
+        FastForwardSecondsRow(viewState.fastForwardSecondsInSeconds) {
+          listener.onFastForwardSecondsRowClick()
         }
       }
 
@@ -327,10 +333,17 @@ private fun Dialog(
         onDismiss = listener::dismissDialog,
       )
     }
-    SettingsViewState.Dialog.SeekTime -> {
-      SeekAmountDialog(
-        currentSeconds = viewState.seekTimeInSeconds,
-        onSecondsConfirm = listener::seekAmountChanged,
+    SettingsViewState.Dialog.RewindSeconds -> {
+      RewindSecondsDialog(
+        currentSeconds = viewState.rewindSecondsInSeconds,
+        onSecondsConfirm = listener::rewindSecondsChanged,
+        onDismiss = listener::dismissDialog,
+      )
+    }
+    SettingsViewState.Dialog.FastForwardSeconds -> {
+      FastForwardSecondsDialog(
+        currentSeconds = viewState.fastForwardSecondsInSeconds,
+        onSecondsConfirm = listener::fastForwardSecondsChanged,
         onDismiss = listener::dismissDialog,
       )
     }

@@ -5,7 +5,8 @@ import java.time.LocalTime
 data class SettingsViewState(
   val useDarkTheme: Boolean,
   val showDarkThemePref: Boolean,
-  val seekTimeInSeconds: Int,
+  val rewindSecondsInSeconds: Int,
+  val fastForwardSecondsInSeconds: Int,
   val autoRewindInSeconds: Int,
   val appVersion: String,
   val dialog: Dialog?,
@@ -19,7 +20,8 @@ data class SettingsViewState(
 
   enum class Dialog {
     AutoRewindAmount,
-    SeekTime,
+    RewindSeconds,
+    FastForwardSeconds,
   }
 
   companion object {
@@ -27,7 +29,8 @@ data class SettingsViewState(
       return SettingsViewState(
         useDarkTheme = false,
         showDarkThemePref = true,
-        seekTimeInSeconds = 42,
+        rewindSecondsInSeconds = 10,
+        fastForwardSecondsInSeconds = 30,
         autoRewindInSeconds = 12,
         dialog = null,
         appVersion = "1.2.3",

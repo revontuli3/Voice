@@ -6,8 +6,10 @@ interface SettingsListener {
   fun close()
   fun toggleDarkTheme()
   fun toggleGrid()
-  fun seekAmountChanged(seconds: Int)
-  fun onSeekAmountRowClick()
+  fun rewindSecondsChanged(seconds: Int)
+  fun onRewindSecondsRowClick()
+  fun fastForwardSecondsChanged(seconds: Int)
+  fun onFastForwardSecondsRowClick()
   fun autoRewindAmountChang(seconds: Int)
   fun onAutoRewindRowClick()
   fun dismissDialog()
@@ -30,8 +32,10 @@ interface SettingsListener {
       override fun close() {}
       override fun toggleDarkTheme() {}
       override fun toggleGrid() {}
-      override fun seekAmountChanged(seconds: Int) {}
-      override fun onSeekAmountRowClick() {}
+      override fun rewindSecondsChanged(seconds: Int) {}
+      override fun onRewindSecondsRowClick() {}
+      override fun fastForwardSecondsChanged(seconds: Int) {}
+      override fun onFastForwardSecondsRowClick() {}
       override fun autoRewindAmountChang(seconds: Int) {}
       override fun onAutoRewindRowClick() {}
       override fun dismissDialog() {}

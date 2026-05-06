@@ -31,7 +31,8 @@ class SettingsViewModelTest {
   private val scope = TestScope()
   private val useDarkThemeStore = MemoryDataStore(false)
   private val autoRewindAmountStore = MemoryDataStore(10)
-  private val seekTimeStore = MemoryDataStore(30)
+  private val rewindSecondsStore = MemoryDataStore(10)
+  private val fastForwardSecondsStore = MemoryDataStore(30)
   private val gridModeStore = MemoryDataStore(GridMode.GRID)
   private val sleepTimerPreferenceStore = MemoryDataStore(SleepTimerPreference.Default)
   private val analyticsConsentStore = MemoryDataStore(false)
@@ -46,19 +47,18 @@ class SettingsViewModelTest {
   private val gridCount = mockk<GridCount> {
     every { useGridAsDefault() } returns true
   }
-  private val folderPickerFeatureFlag = MemoryFeatureFlag(false)
 
   private val viewModel = SettingsViewModel(
     useDarkThemeStore = useDarkThemeStore,
     autoRewindAmountStore = autoRewindAmountStore,
-    seekTimeStore = seekTimeStore,
+    rewindSecondsStore = rewindSecondsStore,
+    fastForwardSecondsStore = fastForwardSecondsStore,
     navigator = navigator,
     appInfoProvider = appInfoProvider,
     gridModeStore = gridModeStore,
     sleepTimerPreferenceStore = sleepTimerPreferenceStore,
     analyticsConsentStore = analyticsConsentStore,
     gridCount = gridCount,
-    folderPickerInSettingsFeatureFlag = folderPickerFeatureFlag,
     developerMenuUnlockedStore = developerMenuUnlockedStore,
     dispatcherProvider = DispatcherProvider(scope.coroutineContext, scope.coroutineContext, scope.coroutineContext),
   )

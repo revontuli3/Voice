@@ -22,8 +22,9 @@ import voice.core.common.AppInfoProvider
 import voice.core.data.GridMode
 import voice.core.data.store.AutoRewindAmountStore
 import voice.core.data.store.DarkThemeStore
+import voice.core.data.store.FastForwardSecondsStore
 import voice.core.data.store.GridModeStore
-import voice.core.data.store.SeekTimeStore
+import voice.core.data.store.RewindSecondsStore
 import voice.core.data.store.VoiceDataStoreFactory
 import voice.core.data.store.intPrefsDataMigration
 
@@ -34,8 +35,11 @@ import voice.core.data.store.intPrefsDataMigration
 )
 interface MigrationTestGraph {
 
-  @SeekTimeStore
-  val seekTimeStore: DataStore<Int>
+  @RewindSecondsStore
+  val rewindSecondsStore: DataStore<Int>
+
+  @FastForwardSecondsStore
+  val fastForwardSecondsStore: DataStore<Int>
 
   @AutoRewindAmountStore
   val autoRewindAmountStore: DataStore<Int>
@@ -72,15 +76,15 @@ class MigrationTests {
   private val sharedPreferences: SharedPreferences = testGraph.sharedPreferences
 
   @Test
-  fun `seekTime migrates from SharedPreferences and cleans up`() = runTest {
+  fun `seekTime migrates into rewind and fastForward and cleans up`() = runTest {
     val expected = 15
     sharedPreferences.edit {
       clear()
       putInt("SEEK_TIME", expected)
     }
 
-    val store = testGraph.seekTimeStore
-    store.data.first() shouldBe expected
+    testGraph.rewindSecondsStore.data.first() shouldBe expected
+    testGraph.fastForwardSecondsStore.data.first() shouldBe expected
     sharedPreferences.contains("SEEK_TIME") shouldBe false
   }
 
@@ -114,7 +118,8 @@ class MigrationTests {
   fun `defaults are used when SharedPreferences empty`() = runTest {
     sharedPreferences.edit { clear() }
 
-    testGraph.seekTimeStore.data.first() shouldBe 20
+    testGraph.rewindSecondsStore.data.first() shouldBe 10
+    testGraph.fastForwardSecondsStore.data.first() shouldBe 30
     testGraph.autoRewindAmountStore.data.first() shouldBe 2
     testGraph.darkThemeStore.data.first() shouldBe false
   }
@@ -126,7 +131,8 @@ class MigrationTests {
       putInt("OTHER_KEY", 50)
     }
 
-    testGraph.seekTimeStore.data.first() shouldBe 20
+    testGraph.rewindSecondsStore.data.first() shouldBe 10
+    testGraph.fastForwardSecondsStore.data.first() shouldBe 30
     sharedPreferences.contains("OTHER_KEY") shouldBe true
   }
 
@@ -139,7 +145,8 @@ class MigrationTests {
       putBoolean("darkTheme", true)
     }
 
-    testGraph.seekTimeStore.data.first() shouldBe 15
+    testGraph.rewindSecondsStore.data.first() shouldBe 15
+    testGraph.fastForwardSecondsStore.data.first() shouldBe 15
     testGraph.autoRewindAmountStore.data.first() shouldBe 5
     testGraph.darkThemeStore.data.first() shouldBe true
 

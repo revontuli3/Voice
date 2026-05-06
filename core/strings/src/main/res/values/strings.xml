@@ -39,8 +39,10 @@
         <item quantity="other">%d seconds</item>
     </plurals>
     <string name="pref_seek_time">Skip amount</string>
+    <string name="pref_rewind_seconds">Rewind seconds</string>
+    <string name="pref_fast_forward_seconds">Fast forward seconds</string>
     <string name="pref_theme_dark">Dark Theme</string>
-    <string name="pref_auto_rewind_title">Auto rewind</string>
+    <string name="pref_auto_rewind_title">Auto rewind after the playback is paused</string>
     <string name="pref_suggest_idea">Suggest an idea</string>
     <string name="pref_use_grid">Use grid layout</string>
     <string name="pref_report_issue">Report a problem</string>

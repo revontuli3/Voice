@@ -21,7 +21,8 @@ import voice.core.data.repo.BookRepository
 import voice.core.data.repo.ChapterRepo
 import voice.core.data.store.AutoRewindAmountStore
 import voice.core.data.store.CurrentBookStore
-import voice.core.data.store.SeekTimeStore
+import voice.core.data.store.FastForwardSecondsStore
+import voice.core.data.store.RewindSecondsStore
 import voice.core.logging.api.Logger
 import voice.core.playback.misc.Decibel
 import voice.core.playback.misc.VolumeGain
@@ -41,8 +42,10 @@ class VoicePlayer(
   private val repo: BookRepository,
   @CurrentBookStore
   private val currentBookStoreId: DataStore<BookId?>,
-  @SeekTimeStore
-  private val seekTimeStore: DataStore<Int>,
+  @RewindSecondsStore
+  private val rewindSecondsStore: DataStore<Int>,
+  @FastForwardSecondsStore
+  private val fastForwardSecondsStore: DataStore<Int>,
   @AutoRewindAmountStore
   private val autoRewindAmountStore: DataStore<Int>,
   private val mediaItemProvider: MediaItemProvider,
@@ -143,7 +146,7 @@ class VoicePlayer(
 
   override fun seekBack() {
     scope.launch {
-      val skipAmount = seekTimeStore.data.first().seconds
+      val skipAmount = rewindSecondsStore.data.first().seconds
 
       val currentPosition = player.currentPosition.takeUnless { it == C.TIME_UNSET }
         ?.milliseconds
@@ -169,7 +172,7 @@ class VoicePlayer(
 
   override fun seekForward() {
     scope.launch {
-      val skipAmount = seekTimeStore.data.first().seconds
+      val skipAmount = fastForwardSecondsStore.data.first().seconds
 
       val currentPosition = player.currentPosition.takeUnless { it == C.TIME_UNSET }
         ?.milliseconds
