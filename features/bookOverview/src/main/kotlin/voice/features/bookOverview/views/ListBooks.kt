@@ -39,6 +39,9 @@ import voice.features.bookOverview.overview.BookOverviewCategory
 import voice.features.bookOverview.overview.BookOverviewItemViewState
 import voice.core.ui.R as UiR
 
+private val bookCardCornerRadius = 4.dp
+private val bookCardShape = RoundedCornerShape(bookCardCornerRadius)
+
 @Composable
 internal fun ListBooks(
   books: Map<BookOverviewCategory, Map<BookId, State<BookOverviewItemViewState>>>,
@@ -96,7 +99,7 @@ internal fun ListBookRow(
   modifier: Modifier = Modifier,
 ) {
   ElevatedCard(
-    shape = MaterialTheme.shapes.extraLarge,
+    shape = bookCardShape,
     modifier = modifier
       .fillMaxWidth()
       .combinedClickable(
@@ -173,13 +176,11 @@ internal fun ListBookRow(
 
 @Composable
 private fun CoverImage(cover: ImmutableFile?) {
-  val startPadding = 16.dp
-  val endPadding = 16.dp
   AsyncImage(
     modifier = Modifier
       .padding(top = 8.dp, start = 8.dp, bottom = 8.dp)
       .size(76.dp)
-      .clip(RoundedCornerShape(topStart = startPadding, bottomStart = startPadding, topEnd = endPadding, bottomEnd = endPadding)),
+      .clip(bookCardShape),
     model = cover?.file,
     placeholder = painterResource(id = UiR.drawable.album_art),
     error = painterResource(id = UiR.drawable.album_art),

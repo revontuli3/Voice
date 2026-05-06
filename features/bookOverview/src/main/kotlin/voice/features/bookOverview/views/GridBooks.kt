@@ -4,12 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +43,9 @@ import voice.features.bookOverview.overview.BookOverviewCategory
 import voice.features.bookOverview.overview.BookOverviewItemViewState
 import kotlin.math.roundToInt
 import voice.core.ui.R as UiR
+
+private val gridBookCardCornerRadius = 4.dp
+private val gridBookCardShape = RoundedCornerShape(gridBookCardCornerRadius)
 
 @Composable
 internal fun GridBooks(
@@ -103,8 +107,7 @@ internal fun GridBook(
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
 ) {
-  ElevatedCard(
-    shape = MaterialTheme.shapes.extraLarge,
+  BoxWithConstraints(
     modifier = Modifier
       .fillMaxWidth()
       .combinedClickable(
@@ -112,61 +115,96 @@ internal fun GridBook(
         onLongClick = { onBookLongClick(book.id) },
       ),
   ) {
-    Column(
-      modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 12.dp),
+    val coverHeight = maxWidth * 3f / 4f
+    val topPad = 6.dp
+    val gapAfterCover = 2.dp
+    val titleBlock = 48.dp
+    val metaRow = 22.dp
+    val gapBeforeProgress = 6.dp
+    val progressTrack = 4.dp
+    val bottomPad = 8.dp
+    val totalHeight =
+      topPad + coverHeight + gapAfterCover + titleBlock + metaRow + gapBeforeProgress + progressTrack + bottomPad
+
+    ElevatedCard(
+      shape = gridBookCardShape,
+      modifier = Modifier
+        .fillMaxWidth()
+        .height(totalHeight),
     ) {
-      Box(
-        modifier = Modifier
-          .fillMaxWidth()
-          .aspectRatio(4f / 3f)
-          .clip(MaterialTheme.shapes.large)
-          .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center,
+      Column(
+        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = topPad, bottom = bottomPad),
       ) {
-        AsyncImage(
-          modifier = Modifier.fillMaxSize(),
-          contentScale = ContentScale.Crop,
-          model = book.cover?.file,
-          placeholder = painterResource(id = UiR.drawable.album_art),
-          error = painterResource(id = UiR.drawable.album_art),
-          contentDescription = null,
-        )
-      }
-
-      Spacer(Modifier.height(4.dp))
-
-      Text(
-        text = book.name,
-        style = MaterialTheme.typography.titleMedium,
-        color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 3,
-        overflow = TextOverflow.Ellipsis,
-      )
-
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Text(
-          text = book.remainingTime,
-          style = MaterialTheme.typography.labelMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (book.progress > 0f) {
-          Text(
-            text = "${(book.progress * 100).toInt()}%",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(coverHeight)
+            .clip(gridBookCardShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+          contentAlignment = Alignment.Center,
+        ) {
+          AsyncImage(
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            model = book.cover?.file,
+            placeholder = painterResource(id = UiR.drawable.album_art),
+            error = painterResource(id = UiR.drawable.album_art),
+            contentDescription = null,
           )
         }
-      }
 
-      Spacer(Modifier.height(8.dp))
-      if (book.progress > 0.05f) {
-        LinearProgressIndicator(
-          progress = { book.progress },
+        Spacer(Modifier.height(gapAfterCover))
+
+        Text(
+          text = book.name,
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(titleBlock),
+          style = MaterialTheme.typography.titleMedium,
+          color = MaterialTheme.colorScheme.onSurface,
+          maxLines = 2,
+          overflow = TextOverflow.Ellipsis,
         )
+
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(metaRow),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Text(
+            text = book.remainingTime,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          if (book.progress > 0f) {
+            Text(
+              text = "${(book.progress * 100).toInt()}%",
+              style = MaterialTheme.typography.labelMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              maxLines = 1,
+            )
+          }
+        }
+
+        Spacer(Modifier.height(gapBeforeProgress))
+
+        if (book.progress > 0.05f) {
+          LinearProgressIndicator(
+            progress = { book.progress },
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(MaterialTheme.shapes.small)
+              .height(progressTrack),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+          )
+        } else {
+          Spacer(Modifier.height(progressTrack))
+        }
       }
     }
   }
@@ -177,7 +215,7 @@ internal fun gridColumnCount(): Int {
   val displayMetrics = LocalResources.current.displayMetrics
   val widthPx = displayMetrics.widthPixels.toFloat()
   val desiredPx = with(LocalDensity.current) {
-    180.dp.toPx()
+    115.dp.toPx()
   }
   val columns = (widthPx / desiredPx).roundToInt()
   return columns.coerceAtLeast(2)
