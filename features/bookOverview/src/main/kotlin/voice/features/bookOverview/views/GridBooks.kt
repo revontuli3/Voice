@@ -115,8 +115,8 @@ internal fun GridBook(
         onLongClick = { onBookLongClick(book.id) },
       ),
   ) {
-    val coverHeight = maxWidth * 3f / 4f
-    val topPad = 6.dp
+    val coverHeight = maxWidth
+    val topPad = 0.dp
     val gapAfterCover = 2.dp
     val titleBlock = 48.dp
     val metaRow = 22.dp
@@ -133,7 +133,7 @@ internal fun GridBook(
         .height(totalHeight),
     ) {
       Column(
-        modifier = Modifier.padding(start = 8.dp, end = 8.dp, top = topPad, bottom = bottomPad),
+        modifier = Modifier.padding(top = topPad, bottom = bottomPad),
       ) {
         Box(
           modifier = Modifier
@@ -159,8 +159,9 @@ internal fun GridBook(
           text = book.name,
           modifier = Modifier
             .fillMaxWidth()
-            .height(titleBlock),
-          style = MaterialTheme.typography.titleMedium,
+            .height(titleBlock)
+            .padding(horizontal = 8.dp),
+          style = MaterialTheme.typography.titleSmall,
           color = MaterialTheme.colorScheme.onSurface,
           maxLines = 2,
           overflow = TextOverflow.Ellipsis,
@@ -169,7 +170,8 @@ internal fun GridBook(
         Row(
           modifier = Modifier
             .fillMaxWidth()
-            .height(metaRow),
+            .height(metaRow)
+            .padding(horizontal = 8.dp),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -197,6 +199,7 @@ internal fun GridBook(
             progress = { book.progress },
             modifier = Modifier
               .fillMaxWidth()
+              .padding(horizontal = 8.dp)
               .clip(MaterialTheme.shapes.small)
               .height(progressTrack),
             color = MaterialTheme.colorScheme.primary,
