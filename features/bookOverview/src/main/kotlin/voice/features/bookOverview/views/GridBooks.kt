@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -212,6 +214,17 @@ internal fun GridBook(
               tint = MaterialTheme.colorScheme.primary,
               modifier = Modifier
                 .align(Alignment.TopEnd)
+                .padding(6.dp),
+            )
+          }
+
+          if (book.isPlex) {
+            Icon(
+              imageVector = if (book.downloaded) Icons.Outlined.CloudDone else Icons.Outlined.Cloud,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier
+                .align(Alignment.TopStart)
                 .padding(6.dp),
             )
           }

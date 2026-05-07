@@ -28,6 +28,7 @@ class DeleteBookViewModel(
   internal val state: State<DeleteBookViewState?> get() = _state
 
   override suspend fun items(bookId: BookId): List<BottomSheetItem> {
+    if (bookId.value.startsWith("plex:")) return emptyList()
     return listOf(BottomSheetItem.DeleteBook)
   }
 
@@ -36,6 +37,7 @@ class DeleteBookViewModel(
     item: BottomSheetItem,
   ) {
     if (item != BottomSheetItem.DeleteBook) return
+    if (bookId.value.startsWith("plex:")) return
 
     _state.value = DeleteBookViewState(
       id = bookId,

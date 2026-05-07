@@ -19,3 +19,6 @@ annotation class PlexBooksCacheStore
 
 @Qualifier
 annotation class PlexArtistsCacheStore
+
+@Qualifier
+annotation class PlexBookStateStore

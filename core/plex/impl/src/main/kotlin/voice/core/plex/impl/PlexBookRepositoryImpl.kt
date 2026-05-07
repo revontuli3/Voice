@@ -24,6 +24,7 @@ import voice.core.plex.impl.network.PlexAuthApi
 import voice.core.plex.impl.network.PlexResourceDto
 import voice.core.plex.impl.network.PlexServerApi
 import voice.core.plex.impl.store.PlexAccountStore
+import voice.core.plex.impl.store.PlexBookStateStore
 import voice.core.plex.impl.store.PlexBooksCacheStore
 import voice.core.plex.impl.store.PlexLibrarySelectionStore
 
@@ -40,6 +41,8 @@ internal constructor(
   private val selectionStore: DataStore<Set<String>>,
   @PlexBooksCacheStore
   private val booksCacheStore: DataStore<Map<String, List<PlexBook>>>,
+  @PlexBookStateStore
+  private val bookStateStore: DataStore<Map<String, PlexBookStateDto>>,
   dispatcherProvider: DispatcherProvider,
 ) : PlexBookRepository {
 
@@ -49,14 +52,23 @@ internal constructor(
   private var refreshJob: Job? = null
 
   override val booksByLibrary: Flow<Map<PlexLibraryId, List<PlexBook>>> =
-    combine(accountStore.data, booksCacheStore.data) { account, cache ->
+    combine(accountStore.data, booksCacheStore.data, bookStateStore.data) { account, cache, states ->
       if (account == null) {
         emptyMap()
       } else {
         cache
           .mapNotNull { (key, books) ->
             val id = PlexLibraryId.fromStorageKey(key) ?: return@mapNotNull null
-            id to books
+            val withState = books.map { book ->
+              val stateKey = plexBookStateKey(id, book.id)
+              val state = states[stateKey] ?: return@map book
+              book.copy(
+                isFinished = state.isFinished,
+                progress = state.progress,
+                downloaded = state.downloaded,
+              )
+            }
+            id to withState
           }
           .toMap()
       }
@@ -92,6 +104,47 @@ internal constructor(
       .distinctUntilChanged()
       .firstOrNull() ?: return
     refreshForAccount(account)
+  }
+
+  override suspend fun markAsNotStarted(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+  ) {
+    updateState(libraryId, plexBookId) { current ->
+      current.copy(isFinished = false, progress = 0f)
+    }
+  }
+
+  override suspend fun markAsCompleted(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+  ) {
+    updateState(libraryId, plexBookId) { current ->
+      current.copy(isFinished = true, progress = 1f)
+    }
+  }
+
+  override suspend fun setDownloaded(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+    downloaded: Boolean,
+  ) {
+    updateState(libraryId, plexBookId) { current ->
+      current.copy(downloaded = downloaded)
+    }
+  }
+
+  private suspend fun updateState(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+    transform: (PlexBookStateDto) -> PlexBookStateDto,
+  ) {
+    val key = plexBookStateKey(libraryId, plexBookId)
+    bookStateStore.updateData { current ->
+      val existing = current[key] ?: PlexBookStateDto()
+      val updated = transform(existing)
+      if (updated == existing) current else current + (key to updated)
+    }
   }
 
   private fun refreshForAccount(account: PlexAccount) {

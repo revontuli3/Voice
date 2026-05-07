@@ -14,6 +14,7 @@ import voice.navigation.Navigator
 class InternetCoverViewModel(private val navigator: Navigator) : BottomSheetItemViewModel {
 
   override suspend fun items(bookId: BookId): List<BottomSheetItem> {
+    if (bookId.value.startsWith("plex:")) return emptyList()
     return listOf(BottomSheetItem.InternetCover)
   }
 
@@ -21,6 +22,7 @@ class InternetCoverViewModel(private val navigator: Navigator) : BottomSheetItem
     bookId: BookId,
     item: BottomSheetItem,
   ) {
+    if (bookId.value.startsWith("plex:")) return
     if (item == BottomSheetItem.InternetCover) {
       navigator.goTo(Destination.CoverFromInternet(bookId))
     }

@@ -17,6 +17,7 @@ class FileCoverViewModel(private val navigator: Navigator) : BottomSheetItemView
   private var bookId: BookId? = null
 
   override suspend fun items(bookId: BookId): List<BottomSheetItem> {
+    if (bookId.value.startsWith("plex:")) return emptyList()
     return listOf(BottomSheetItem.FileCover)
   }
 
@@ -24,6 +25,7 @@ class FileCoverViewModel(private val navigator: Navigator) : BottomSheetItemView
     bookId: BookId,
     item: BottomSheetItem,
   ) {
+    if (bookId.value.startsWith("plex:")) return
     if (item == BottomSheetItem.FileCover) {
       this.bookId = bookId
     }

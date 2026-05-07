@@ -162,6 +162,9 @@
     <string name="pref_plex_login_failed">Login failed. Please try again.</string>
     <string name="book_header_local">Local books</string>
     <string name="book_plex_library_empty">No books yet</string>
+    <string name="plex_download_title">Download?</string>
+    <string name="plex_download_message">Download %1$s?</string>
+    <string name="plex_download_confirm">Download</string>
     <string name="book_authors_title">Authors</string>
     <string name="book_authors_all">All Authors</string>
     <string name="book_author_unknown">Unknown</string>

@@ -11,5 +11,7 @@ public data class PlexBook(
   val coverUrl: String?,
   val addedAtEpochSeconds: Long?,
   val lastViewedAtEpochSeconds: Long?,
+  val isFinished: Boolean = false,
+  val progress: Float = 0f,
+  val downloaded: Boolean = false,
 )
-

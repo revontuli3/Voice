@@ -15,6 +15,8 @@ data class BookOverviewItemViewState(
   val coverUrl: String?,
   val progress: Float,
   val isFinished: Boolean,
+  val isPlex: Boolean,
+  val downloaded: Boolean,
   val id: BookId,
   val remainingTime: String,
 )
@@ -27,6 +29,8 @@ internal fun Book.toItemViewState() = BookOverviewItemViewState(
   id = id,
   progress = progress(),
   isFinished = content.isFinished,
+  isPlex = false,
+  downloaded = false,
   remainingTime = formatTime(duration - position),
 )
 

@@ -18,6 +18,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Alignment
@@ -68,6 +70,33 @@ fun BrowseBooks(
     rootGraphAs<BrowseBooksGraph>().browseBooksViewModelFactory.create(source, author)
   }
   val viewState = viewModel.viewState() ?: return
+
+  val plexDownloadState = viewModel.plexDownloadDialog
+  if (plexDownloadState != null) {
+    AlertDialog(
+      onDismissRequest = viewModel::onPlexDownloadDismiss,
+      title = { Text(text = stringResource(StringsR.string.plex_download_title)) },
+      text = {
+        Text(
+          text = stringResource(
+            StringsR.string.plex_download_message,
+            plexDownloadState.title,
+          ),
+        )
+      },
+      confirmButton = {
+        TextButton(onClick = viewModel::onPlexDownloadConfirm) {
+          Text(text = stringResource(StringsR.string.plex_download_confirm))
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = viewModel::onPlexDownloadDismiss) {
+          Text(text = stringResource(StringsR.string.dialog_cancel))
+        }
+      },
+    )
+  }
+
   BrowseBooksView(
     viewState = viewState,
     onBack = viewModel::onBack,

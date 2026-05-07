@@ -23,6 +23,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,6 +61,7 @@ import voice.features.bookOverview.overview.BookOverviewItemViewState
 import voice.features.bookOverview.overview.BookOverviewLayoutMode
 import voice.features.bookOverview.overview.BookOverviewSection
 import voice.features.bookOverview.overview.BookOverviewViewState
+import voice.features.bookOverview.overview.PlexDownloadDialogState
 import voice.features.bookOverview.search.BookSearchViewState
 import voice.features.bookOverview.views.topbar.BookOverviewTopBar
 import voice.navigation.Destination
@@ -141,6 +144,32 @@ fun BookOverviewScreen(modifier: Modifier = Modifier) {
       onConfirmEditTitle = editBookTitleViewModel::onConfirmEditTitle,
       viewState = editBookTitleState,
       onUpdateEditTitle = editBookTitleViewModel::onUpdateEditTitle,
+    )
+  }
+
+  val plexDownloadState: PlexDownloadDialogState? = bookOverviewViewModel.plexDownloadDialog
+  if (plexDownloadState != null) {
+    AlertDialog(
+      onDismissRequest = bookOverviewViewModel::onPlexDownloadDismiss,
+      title = { Text(text = stringResource(StringsR.string.plex_download_title)) },
+      text = {
+        Text(
+          text = stringResource(
+            StringsR.string.plex_download_message,
+            plexDownloadState.title,
+          ),
+        )
+      },
+      confirmButton = {
+        TextButton(onClick = bookOverviewViewModel::onPlexDownloadConfirm) {
+          Text(text = stringResource(StringsR.string.plex_download_confirm))
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = bookOverviewViewModel::onPlexDownloadDismiss) {
+          Text(text = stringResource(StringsR.string.dialog_cancel))
+        }
+      },
     )
   }
 
@@ -406,6 +435,8 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
       coverUrl = null,
       progress = 0.8F,
       isFinished = false,
+      isPlex = false,
+      downloaded = false,
       id = BookId(UUID.randomUUID().toString()),
       remainingTime = "01:04",
     )

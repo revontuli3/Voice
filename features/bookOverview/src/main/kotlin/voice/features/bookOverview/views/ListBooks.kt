@@ -21,7 +21,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -173,6 +177,8 @@ internal fun ListBookRow(
         CoverImage(
           cover = book.cover,
           coverUrl = book.coverUrl,
+          isPlex = book.isPlex,
+          downloaded = book.downloaded,
         )
 
         Column(
@@ -242,18 +248,35 @@ internal fun ListBookRow(
 private fun CoverImage(
   cover: ImmutableFile?,
   coverUrl: String?,
+  isPlex: Boolean,
+  downloaded: Boolean,
 ) {
-  AsyncImage(
+  Box(
     modifier = Modifier
       .padding(top = 8.dp, start = 8.dp, bottom = 8.dp)
       .size(76.dp)
       .clip(bookCardShape),
-    model = coverUrl ?: cover?.file,
-    placeholder = painterResource(id = UiR.drawable.album_art),
-    error = painterResource(id = UiR.drawable.album_art),
-    contentScale = ContentScale.Crop,
-    contentDescription = null,
-  )
+  ) {
+    AsyncImage(
+      modifier = Modifier.size(76.dp),
+      model = coverUrl ?: cover?.file,
+      placeholder = painterResource(id = UiR.drawable.album_art),
+      error = painterResource(id = UiR.drawable.album_art),
+      contentScale = ContentScale.Crop,
+      contentDescription = null,
+    )
+
+    if (isPlex) {
+      Icon(
+        imageVector = if (downloaded) Icons.Outlined.CloudDone else Icons.Outlined.Cloud,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+          .align(Alignment.TopStart)
+          .padding(4.dp),
+      )
+    }
+  }
 }
 
 @Composable

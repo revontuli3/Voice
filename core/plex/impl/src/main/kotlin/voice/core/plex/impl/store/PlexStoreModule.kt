@@ -22,6 +22,7 @@ import voice.core.plex.api.PlexAccount
 import voice.core.plex.api.PlexArtist
 import voice.core.plex.api.PlexBook
 import voice.core.plex.api.PlexLibrary
+import voice.core.plex.impl.PlexBookStateDto
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -133,6 +134,24 @@ interface PlexStoreModule {
         defaultValue = emptyMap(),
         json = json,
         serializer = MapSerializer(String.serializer(), ListSerializer(PlexArtist.serializer())),
+      ),
+    )
+  }
+
+  @Provides
+  @SingleIn(AppScope::class)
+  @PlexBookStateStore
+  fun plexBookStateStore(
+    context: Application,
+    json: Json,
+  ): DataStore<Map<String, PlexBookStateDto>> {
+    return createDataStore(
+      context = context,
+      fileName = "plexBookState",
+      serializer = JsonSerializer(
+        defaultValue = emptyMap(),
+        json = json,
+        serializer = MapSerializer(String.serializer(), PlexBookStateDto.serializer()),
       ),
     )
   }
