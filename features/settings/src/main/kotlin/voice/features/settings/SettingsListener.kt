@@ -23,6 +23,7 @@ interface SettingsListener {
   fun setAutoSleepTimerEnd(time: LocalTime)
   fun toggleAnalytics()
   fun openFolderPicker()
+  fun openPlexSettings()
   fun onAppVersionClick()
 
   fun openDeveloperMenu()
@@ -49,6 +50,7 @@ interface SettingsListener {
       override fun setAutoSleepTimerEnd(time: LocalTime) {}
       override fun toggleAnalytics() {}
       override fun openFolderPicker() {}
+      override fun openPlexSettings() {}
       override fun onAppVersionClick() {}
       override fun openDeveloperMenu() {}
     }

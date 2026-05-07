@@ -148,4 +148,16 @@
         <item quantity="other">%d minutes</item>
     </plurals>
     <string name="playback.current_chapter">Current chapter</string>
+    <string name="pref_plex_settings_title">Plex</string>
+    <string name="pref_plex_settings_summary">Connect to a Plex Media Server</string>
+    <string name="pref_plex_login">Login to Plex</string>
+    <string name="pref_plex_logging_in">Logging in…</string>
+    <string name="pref_plex_logged_in_as">Logged in as %1$s</string>
+    <string name="pref_plex_logout">Log out</string>
+    <string name="pref_plex_libraries">Plex Libraries</string>
+    <string name="pref_plex_libraries_loading">Loading libraries…</string>
+    <string name="pref_plex_libraries_loading_subtitle">This may take a few seconds</string>
+    <string name="pref_plex_no_libraries">No audiobook libraries found</string>
+    <string name="pref_plex_pin_instruction">Enter %1$s at plex.tv/link</string>
+    <string name="pref_plex_login_failed">Login failed. Please try again.</string>
 </resources>

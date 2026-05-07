@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lightbulb
@@ -171,6 +172,24 @@ private fun Settings(
 
       item {
         AutoSleepTimerCard(viewState.autoSleepTimer, listener)
+      }
+
+      item {
+        ListItem(
+          modifier = Modifier.clickable { listener.openPlexSettings() },
+          leadingContent = {
+            Icon(
+              imageVector = Icons.Outlined.Cloud,
+              contentDescription = stringResource(StringsR.string.pref_plex_settings_title),
+            )
+          },
+          headlineContent = {
+            Text(stringResource(StringsR.string.pref_plex_settings_title))
+          },
+          supportingContent = {
+            Text(stringResource(StringsR.string.pref_plex_settings_summary))
+          },
+        )
       }
 
       item {

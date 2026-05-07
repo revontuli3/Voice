@@ -192,6 +192,10 @@ class SettingsViewModel(
     navigator.goTo(Destination.FolderPicker)
   }
 
+  override fun openPlexSettings() {
+    navigator.goTo(Destination.PlexSettings)
+  }
+
   override fun setAutoSleepTimer(checked: Boolean) {
     mainScope.launch {
       sleepTimerPreferenceStore.updateData { currentPrefs ->

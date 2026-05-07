@@ -1,0 +1,16 @@
+package voice.core.plex.impl.network
+
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Url
+
+interface PlexServerApi {
+
+  @GET
+  suspend fun librarySections(
+    @Url url: String,
+    @Header("X-Plex-Token") authToken: String,
+    @Header("X-Plex-Client-Identifier") clientIdentifier: String,
+    @Header("Accept") accept: String = "application/json",
+  ): PlexLibrarySectionsResponse
+}

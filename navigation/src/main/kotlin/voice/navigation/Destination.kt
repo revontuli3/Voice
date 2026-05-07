@@ -56,6 +56,11 @@ sealed interface Destination {
   }
 
   @Serializable
+  data object PlexSettings : Compose {
+    override val trackingName: String get() = "PlexSettings"
+  }
+
+  @Serializable
   data object BookOverview : Compose {
     override val trackingName: String get() = "BookOverview"
   }
