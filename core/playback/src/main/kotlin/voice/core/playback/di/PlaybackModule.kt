@@ -26,6 +26,7 @@ import voice.core.playback.player.DurationInconsistenciesUpdater
 import voice.core.playback.player.OnlyAudioRenderersFactory
 import voice.core.playback.player.VoicePlayer
 import voice.core.playback.player.onAudioSessionIdChanged
+import voice.core.playback.playstate.CurrentBookClearOnEndedListener
 import voice.core.playback.playstate.PlayStateDelegatingListener
 import voice.core.playback.playstate.PositionUpdater
 import voice.core.playback.session.LibrarySessionCallback
@@ -52,6 +53,7 @@ interface PlaybackModule {
     mediaSourceFactory: MediaSource.Factory,
     playStateDelegatingListener: PlayStateDelegatingListener,
     positionUpdater: PositionUpdater,
+    currentBookClearOnEndedListener: CurrentBookClearOnEndedListener,
     volumeGain: VolumeGain,
     durationInconsistenciesUpdater: DurationInconsistenciesUpdater,
     @Media3AudioOffloadFeatureFlagQualifier media3AudioOffloadFeatureFlag: FeatureFlag<Boolean>,
@@ -82,6 +84,7 @@ interface PlaybackModule {
         playStateDelegatingListener.attachTo(player)
         positionUpdater.attachTo(player)
         durationInconsistenciesUpdater.attachTo(player)
+        currentBookClearOnEndedListener.attachTo(player)
         player.onAudioSessionIdChanged {
           volumeGain.audioSessionId = it
         }

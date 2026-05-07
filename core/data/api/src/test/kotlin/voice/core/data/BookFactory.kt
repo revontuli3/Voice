@@ -22,6 +22,7 @@ fun book(
       cover = null,
       currentChapter = currentChapter,
       isActive = true,
+      isFinished = false,
       lastPlayedAt = Instant.ofEpochMilli(lastPlayedAtMillis),
       skipSilence = false,
       id = BookId(UUID.randomUUID().toString()),

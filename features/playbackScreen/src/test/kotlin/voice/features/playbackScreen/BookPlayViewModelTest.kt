@@ -357,6 +357,7 @@ private fun book(
       cover = null,
       currentChapter = chapters[1].id,
       isActive = true,
+      isFinished = false,
       lastPlayedAt = Instant.ofEpochMilli(lastPlayedAtMillis),
       skipSilence = false,
       id = BookId(UUID.randomUUID().toString()),

@@ -26,6 +26,9 @@ enum class BookOverviewCategory(
 
 val Book.category: BookOverviewCategory
   get() {
+    if (content.isFinished) {
+      return BookOverviewCategory.FINISHED
+    }
     return if (position == 0L) {
       BookOverviewCategory.NOT_STARTED
     } else {
