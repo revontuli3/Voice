@@ -65,6 +65,7 @@ internal fun GridBooks(
   books: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>>,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
+  onSectionClick: (BookOverviewSection) -> Unit,
   showPermissionBugCard: Boolean,
   onPermissionBugCardClick: () -> Unit,
 ) {
@@ -79,9 +80,15 @@ internal fun GridBooks(
     }
     books.forEach { (section, books) ->
       item(key = "header:${section.id}") {
+        val isClickable = section is BookOverviewSection.Local || section is BookOverviewSection.PlexLibrary
         Header(
           modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp),
           section = section,
+          onClick = if (isClickable) {
+            { onSectionClick(section) }
+          } else {
+            null
+          },
         )
       }
 

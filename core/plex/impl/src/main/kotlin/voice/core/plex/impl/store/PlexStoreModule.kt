@@ -19,6 +19,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import voice.core.plex.api.PlexAccount
+import voice.core.plex.api.PlexArtist
 import voice.core.plex.api.PlexBook
 import voice.core.plex.api.PlexLibrary
 import java.io.File
@@ -114,6 +115,24 @@ interface PlexStoreModule {
         defaultValue = emptyMap(),
         json = json,
         serializer = MapSerializer(String.serializer(), ListSerializer(PlexBook.serializer())),
+      ),
+    )
+  }
+
+  @Provides
+  @SingleIn(AppScope::class)
+  @PlexArtistsCacheStore
+  fun plexArtistsCacheStore(
+    context: Application,
+    json: Json,
+  ): DataStore<Map<String, List<PlexArtist>>> {
+    return createDataStore(
+      context = context,
+      fileName = "plexArtistsCache",
+      serializer = JsonSerializer(
+        defaultValue = emptyMap(),
+        json = json,
+        serializer = MapSerializer(String.serializer(), ListSerializer(PlexArtist.serializer())),
       ),
     )
   }

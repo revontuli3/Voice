@@ -85,6 +85,15 @@ class MainActivity : AppCompatActivity() {
               backStack.removeLastOrNull()
             }
           },
+          transitionSpec = {
+            slideInHorizontally(
+              animationSpec = tween(),
+              initialOffsetX = { it },
+            ) togetherWith slideOutHorizontally(
+              animationSpec = tween(),
+              targetOffsetX = { -it },
+            )
+          },
           popTransitionSpec = {
             slideInHorizontally(
               animationSpec = tween(),

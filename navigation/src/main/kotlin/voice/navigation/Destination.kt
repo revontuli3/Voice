@@ -6,6 +6,30 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import voice.core.common.serialization.UriSerializer
 import voice.core.data.BookId
+import voice.core.plex.api.PlexLibraryId
+
+@Serializable
+sealed interface BrowseSource {
+
+  @Serializable
+  data object Local : BrowseSource
+
+  @Serializable
+  data class PlexLibrary(val id: PlexLibraryId) : BrowseSource
+}
+
+@Serializable
+sealed interface AuthorFilter {
+
+  @Serializable
+  data object All : AuthorFilter
+
+  @Serializable
+  data object Unknown : AuthorFilter
+
+  @Serializable
+  data class Named(val name: String) : AuthorFilter
+}
 
 sealed interface Destination {
 
@@ -58,6 +82,19 @@ sealed interface Destination {
   @Serializable
   data object PlexSettings : Compose {
     override val trackingName: String get() = "PlexSettings"
+  }
+
+  @Serializable
+  data class BrowseAuthors(val source: BrowseSource) : Compose {
+    override val trackingName: String get() = "BrowseAuthors"
+  }
+
+  @Serializable
+  data class BrowseBooks(
+    val source: BrowseSource,
+    val author: AuthorFilter,
+  ) : Compose {
+    override val trackingName: String get() = "BrowseBooks"
   }
 
   @Serializable

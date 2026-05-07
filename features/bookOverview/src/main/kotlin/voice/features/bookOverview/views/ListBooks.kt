@@ -60,6 +60,7 @@ internal fun ListBooks(
   books: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>>,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
+  onSectionClick: (BookOverviewSection) -> Unit,
   showPermissionBugCard: Boolean,
   onPermissionBugCardClick: () -> Unit,
 ) {
@@ -77,12 +78,18 @@ internal fun ListBooks(
         key = section.id,
         contentType = "header",
       ) {
+        val isClickable = section is BookOverviewSection.Local || section is BookOverviewSection.PlexLibrary
         Header(
           modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 8.dp, horizontal = 8.dp),
           section = section,
+          onClick = if (isClickable) {
+            { onSectionClick(section) }
+          } else {
+            null
+          },
         )
       }
       item(key = "row:${section.id}") {

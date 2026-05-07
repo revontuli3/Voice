@@ -44,6 +44,7 @@ import voice.core.search.BookSearch
 import voice.core.plex.api.PlexLibraryId
 import voice.core.plex.api.PlexBookRepository
 import voice.core.plex.api.PlexLibraryRepository
+import voice.navigation.BrowseSource
 import voice.core.ui.GridCount
 import voice.core.ui.ImmutableFile
 import voice.features.bookOverview.di.BookOverviewScope
@@ -274,6 +275,18 @@ class BookOverviewViewModel(
   fun onBookClick(id: BookId) {
     if (id.value.startsWith("plex:")) return
     navigator.goTo(Destination.Playback(id))
+  }
+
+  fun onSectionClick(section: BookOverviewSection) {
+    val source = when (section) {
+      BookOverviewSection.Local -> BrowseSource.Local
+      is BookOverviewSection.PlexLibrary -> {
+        val id = PlexLibraryId.fromStorageKey(section.id.removePrefix("plex:")) ?: return
+        BrowseSource.PlexLibrary(id)
+      }
+      BookOverviewSection.Current -> return
+    }
+    navigator.goTo(Destination.BrowseAuthors(source = source))
   }
 
   fun onSearchActiveChange(active: Boolean) {

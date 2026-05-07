@@ -115,6 +115,7 @@ fun BookOverviewScreen(modifier: Modifier = Modifier) {
       bottomSheetViewModel.bookSelected(bookId)
       showBottomSheet = true
     },
+    onSectionClick = bookOverviewViewModel::onSectionClick,
     onPlayButtonClick = bookOverviewViewModel::playPause,
     onRewindClick = bookOverviewViewModel::rewind,
     onFastForwardClick = bookOverviewViewModel::fastForward,
@@ -176,6 +177,7 @@ internal fun BookOverview(
   onSettingsClick: () -> Unit,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
+  onSectionClick: (BookOverviewSection) -> Unit,
   onPlayButtonClick: () -> Unit,
   onRewindClick: () -> Unit,
   onFastForwardClick: () -> Unit,
@@ -283,6 +285,7 @@ internal fun BookOverview(
             books = viewState.books,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
+            onSectionClick = onSectionClick,
             showPermissionBugCard = viewState.showStoragePermissionBugCard,
             onPermissionBugCardClick = onPermissionBugCardClick,
           )
@@ -292,6 +295,7 @@ internal fun BookOverview(
             books = viewState.books,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
+            onSectionClick = onSectionClick,
             showPermissionBugCard = viewState.showStoragePermissionBugCard,
             onPermissionBugCardClick = onPermissionBugCardClick,
           )
@@ -379,6 +383,7 @@ fun BookOverviewPreview(
       onSettingsClick = {},
       onBookClick = {},
       onBookLongClick = {},
+      onSectionClick = {},
       onPlayButtonClick = {},
       onRewindClick = {},
       onFastForwardClick = {},
