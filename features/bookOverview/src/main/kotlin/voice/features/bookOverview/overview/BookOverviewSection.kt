@@ -16,14 +16,16 @@ sealed interface BookOverviewSection {
     override val id: String = "current"
     override val titleRes: Int = StringsR.string.book_header_current
     override val title: String? = null
-    override val comparator: Comparator<Book> = BookComparator.ByLastPlayed
+    override val comparator: Comparator<Book> = compareByDescending<Book> { it.content.lastPlayedAt }
+      .thenByDescending { it.content.addedAt }
   }
 
   data object Local : BookOverviewSection {
     override val id: String = "local"
     override val titleRes: Int = StringsR.string.book_header_local
     override val title: String? = null
-    override val comparator: Comparator<Book> = BookComparator.ByLastPlayed
+    override val comparator: Comparator<Book> = compareByDescending<Book> { it.content.lastPlayedAt }
+      .thenByDescending { it.content.addedAt }
   }
 
   data class PlexLibrary(

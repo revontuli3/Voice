@@ -13,4 +13,12 @@ interface PlexServerApi {
     @Header("X-Plex-Client-Identifier") clientIdentifier: String,
     @Header("Accept") accept: String = "application/json",
   ): PlexLibrarySectionsResponse
+
+  @GET
+  suspend fun librarySectionAlbums(
+    @Url url: String,
+    @Header("X-Plex-Token") authToken: String,
+    @Header("X-Plex-Client-Identifier") clientIdentifier: String,
+    @Header("Accept") accept: String = "application/json",
+  ): PlexLibraryAlbumsResponse
 }

@@ -13,3 +13,6 @@ annotation class PlexLibrarySelectionStore
 
 @Qualifier
 annotation class PlexLibraryCacheStore
+
+@Qualifier
+annotation class PlexBooksCacheStore

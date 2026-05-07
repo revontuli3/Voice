@@ -11,6 +11,7 @@ import dev.zacsweers.metro.SingleIn
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
@@ -18,6 +19,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import voice.core.plex.api.PlexAccount
+import voice.core.plex.api.PlexBook
 import voice.core.plex.api.PlexLibrary
 import java.io.File
 import java.io.InputStream
@@ -94,6 +96,24 @@ interface PlexStoreModule {
         defaultValue = emptyList(),
         json = json,
         serializer = ListSerializer(PlexLibrary.serializer()),
+      ),
+    )
+  }
+
+  @Provides
+  @SingleIn(AppScope::class)
+  @PlexBooksCacheStore
+  fun plexBooksCacheStore(
+    context: Application,
+    json: Json,
+  ): DataStore<Map<String, List<PlexBook>>> {
+    return createDataStore(
+      context = context,
+      fileName = "plexBooksCache",
+      serializer = JsonSerializer(
+        defaultValue = emptyMap(),
+        json = json,
+        serializer = MapSerializer(String.serializer(), ListSerializer(PlexBook.serializer())),
       ),
     )
   }

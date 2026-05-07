@@ -398,6 +398,7 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
       name = "Book",
       author = "Author",
       cover = null,
+      coverUrl = null,
       progress = 0.8F,
       isFinished = false,
       id = BookId(UUID.randomUUID().toString()),

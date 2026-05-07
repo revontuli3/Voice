@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -30,6 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +57,8 @@ import voice.core.strings.R as StringsR
 
 private val gridBookCardCornerRadius = 4.dp
 private val gridBookCardShape = RoundedCornerShape(gridBookCardCornerRadius)
+private const val INITIAL_PLEX_ITEMS = 12
+private const val PAGE_SIZE_PLEX_ITEMS = 12
 
 @Composable
 internal fun GridBooks(
@@ -97,12 +105,27 @@ internal fun GridBooks(
             }
           }
         } else {
+          var limit by remember(section.id) { mutableIntStateOf(INITIAL_PLEX_ITEMS) }
+          val listState = rememberLazyListState()
+          val isPlex = section is BookOverviewSection.PlexLibrary
+          val entries = if (isPlex) books.toList().take(limit) else books.toList()
+          val shouldLoadMore by remember(section.id, limit, books.size) {
+            derivedStateOf {
+              if (!isPlex) return@derivedStateOf false
+              val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+              lastVisible >= entries.lastIndex - 3 && limit < books.size
+            }
+          }
+          if (shouldLoadMore) {
+            limit = (limit + PAGE_SIZE_PLEX_ITEMS).coerceAtMost(books.size)
+          }
           LazyRow(
+            state = listState,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(horizontal = 8.dp),
           ) {
             items(
-              items = books.toList(),
+              items = entries,
               key = { (bookId, _) -> bookId.value },
               contentType = { "item" },
             ) { (_, bookState) ->
@@ -169,7 +192,7 @@ internal fun GridBook(
           AsyncImage(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop,
-            model = book.cover?.file,
+            model = book.coverUrl ?: book.cover?.file,
             placeholder = painterResource(id = UiR.drawable.album_art),
             error = painterResource(id = UiR.drawable.album_art),
             contentDescription = null,

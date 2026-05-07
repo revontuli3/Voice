@@ -34,6 +34,7 @@ import voice.core.playback.playstate.PlayStateManager
 import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
+import voice.core.plex.api.PlexBookRepository
 import voice.core.plex.api.PlexLibraryRepository
 import voice.core.plex.api.PlexLibraryId
 import voice.core.ui.GridCount
@@ -80,6 +81,9 @@ class BookOverviewViewModelTest {
         every { libraries } returns MutableStateFlow(emptyList())
         every { selectedLibraryIds } returns MutableStateFlow<Set<PlexLibraryId>>(emptySet())
         every { isRefreshing } returns MutableStateFlow(false)
+      },
+      plexBookRepository = mockk<PlexBookRepository>(relaxed = true) {
+        every { booksByLibrary } returns MutableStateFlow(emptyMap())
       },
       deviceHasStoragePermissionBug = mockk<DeviceHasStoragePermissionBug> {
         every { hasBug } returns MutableStateFlow(false)

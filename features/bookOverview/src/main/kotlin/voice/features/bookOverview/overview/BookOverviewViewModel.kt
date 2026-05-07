@@ -41,6 +41,8 @@ import voice.core.playback.playstate.PlayStateManager
 import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
+import voice.core.plex.api.PlexLibraryId
+import voice.core.plex.api.PlexBookRepository
 import voice.core.plex.api.PlexLibraryRepository
 import voice.core.ui.GridCount
 import voice.core.ui.ImmutableFile
@@ -67,6 +69,7 @@ class BookOverviewViewModel(
   private val search: BookSearch,
   private val contentRepo: BookContentRepo,
   private val plexLibraryRepository: PlexLibraryRepository,
+  private val plexBookRepository: PlexBookRepository,
   private val deviceHasStoragePermissionBug: DeviceHasStoragePermissionBug,
   @ExperimentalPlaybackPersistenceQualifier
   private val experimentalPlaybackPersistenceFeatureFlag: FeatureFlag<Boolean>,
@@ -92,6 +95,8 @@ class BookOverviewViewModel(
       .collectAsState(initial = emptyList()).value
     val plexSelected = remember { plexLibraryRepository.selectedLibraryIds }
       .collectAsState(initial = emptySet()).value
+    val plexBooksByLibrary = remember { plexBookRepository.booksByLibrary }
+      .collectAsState(initial = emptyMap()).value
     val currentBookId = remember { currentBookStoreDataStore.data }
       .collectAsState(initial = null).value
     val scannerActive = remember { mediaScanner.scannerActive }
@@ -180,7 +185,24 @@ class BookOverviewViewModel(
           }
           .sortedBy { it.title }
           .forEach { section ->
-            put(section, emptyMap())
+            val id = PlexLibraryId.fromStorageKey(section.id.removePrefix("plex:")) ?: return@forEach
+            val plexBooks = plexBooksByLibrary[id].orEmpty()
+            val items = plexBooks.associate { plexBook ->
+              val bookId = BookId("plex:${id.storageKey}:${plexBook.id}")
+              bookId to rememberUpdatedState(
+                BookOverviewItemViewState(
+                  name = plexBook.title,
+                  author = plexBook.author,
+                  cover = null,
+                  coverUrl = plexBook.coverUrl,
+                  progress = 0f,
+                  isFinished = false,
+                  id = bookId,
+                  remainingTime = "",
+                ),
+              )
+            }
+            put(section, items)
           }
       },
       playButtonState = if (playState == PlayStateManager.PlayState.Playing) {
@@ -250,6 +272,7 @@ class BookOverviewViewModel(
   }
 
   fun onBookClick(id: BookId) {
+    if (id.value.startsWith("plex:")) return
     navigator.goTo(Destination.Playback(id))
   }
 
