@@ -1,6 +1,8 @@
 package voice.features.playbackScreen
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -28,6 +31,7 @@ internal fun SelectChapterDialog(
   dialogState: BookPlayDialogViewState.SelectChapterDialog,
   viewModel: BookPlayViewModel,
 ) {
+  val maxSheetHeight = LocalConfiguration.current.screenHeightDp.dp * (2f / 3f)
   ModalBottomSheet(
     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     onDismissRequest = { viewModel.dismissDialog() },
@@ -36,6 +40,9 @@ internal fun SelectChapterDialog(
       // -1 because we want to show the previous chapter on the screen
       val initialFirstVisibleItemIndex = (selectedIndex - 1).coerceAtLeast(0)
       LazyColumn(
+        modifier = Modifier
+          .fillMaxWidth()
+          .heightIn(max = maxSheetHeight),
         state = rememberLazyListState(initialFirstVisibleItemIndex = initialFirstVisibleItemIndex),
         content = {
           items(dialogState.items) { chapter ->

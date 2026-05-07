@@ -10,19 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -117,23 +108,7 @@ class MainActivity : AppCompatActivity() {
                 backStack.removeLastOrNull()
               }
             },
-            dragHandle = {
-              Box(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(vertical = 6.dp),
-                contentAlignment = Alignment.Center,
-              ) {
-                Surface(
-                  modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp),
-                  shape = RoundedCornerShape(2.dp),
-                  color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                  content = {},
-                )
-              }
-            },
+            dragHandle = null,
           ) {
             @Suppress("UNCHECKED_CAST")
             val playbackBackStack = rememberNavBackStack(playbackDestination) as MutableList<Destination.Compose>
