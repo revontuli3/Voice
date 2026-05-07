@@ -13,6 +13,7 @@ data class BookOverviewItemViewState(
   val author: String?,
   val cover: ImmutableFile?,
   val progress: Float,
+  val isFinished: Boolean,
   val id: BookId,
   val remainingTime: String,
 )
@@ -23,6 +24,7 @@ internal fun Book.toItemViewState() = BookOverviewItemViewState(
   cover = content.cover?.let(::ImmutableFile),
   id = id,
   progress = progress(),
+  isFinished = content.isFinished,
   remainingTime = formatTime(duration - position),
 )
 

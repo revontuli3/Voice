@@ -1,11 +1,15 @@
 package voice.core.plex.api
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 public data class PlexLibrary(
   val id: PlexLibraryId,
   val title: String,
   val serverName: String,
 )
 
+@Serializable
 public data class PlexLibraryId(
   val machineIdentifier: String,
   val libraryKey: String,

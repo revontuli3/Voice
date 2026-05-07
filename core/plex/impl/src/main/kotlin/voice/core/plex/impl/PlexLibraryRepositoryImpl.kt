@@ -8,6 +8,7 @@ import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -24,6 +25,7 @@ import voice.core.plex.impl.network.PlexConnectionDto
 import voice.core.plex.impl.network.PlexResourceDto
 import voice.core.plex.impl.network.PlexServerApi
 import voice.core.plex.impl.store.PlexAccountStore
+import voice.core.plex.impl.store.PlexLibraryCacheStore
 import voice.core.plex.impl.store.PlexLibrarySelectionStore
 
 @SingleIn(AppScope::class)
@@ -35,6 +37,8 @@ internal constructor(
   private val serverApi: PlexServerApi,
   @PlexAccountStore
   private val accountStore: DataStore<PlexAccount?>,
+  @PlexLibraryCacheStore
+  private val libraryCacheStore: DataStore<List<PlexLibrary>>,
   @PlexLibrarySelectionStore
   private val selectionStore: DataStore<Set<String>>,
   dispatcherProvider: DispatcherProvider,
@@ -43,7 +47,10 @@ internal constructor(
   private val scope = MainScope(dispatcherProvider)
 
   private val cachedLibraries = MutableStateFlow<List<PlexLibrary>>(emptyList())
-  override val libraries: Flow<List<PlexLibrary>> = cachedLibraries
+  override val libraries: Flow<List<PlexLibrary>> =
+    combine(accountStore.data, libraryCacheStore.data) { account, cached ->
+      if (account == null) emptyList() else cached
+    }
 
   private val refreshing = MutableStateFlow(false)
   override val isRefreshing: Flow<Boolean> = refreshing
@@ -55,11 +62,15 @@ internal constructor(
 
   init {
     scope.launch {
+      libraryCacheStore.data.collect { cached ->
+        cachedLibraries.value = cached
+      }
+    }
+    scope.launch {
       accountStore.data
         .distinctUntilChanged()
         .collect { account ->
           if (account == null) {
-            cachedLibraries.value = emptyList()
             reloadJob?.cancel()
             reloadJob = null
           } else {
@@ -91,7 +102,9 @@ internal constructor(
     reloadJob = scope.launch {
       refreshing.value = true
       try {
-        cachedLibraries.value = loadLibraries(account)
+        val loaded = loadLibraries(account)
+        cachedLibraries.value = loaded
+        libraryCacheStore.updateData { loaded }
       } finally {
         refreshing.value = false
       }

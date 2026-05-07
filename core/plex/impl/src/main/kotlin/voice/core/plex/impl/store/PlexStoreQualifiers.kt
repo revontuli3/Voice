@@ -10,3 +10,6 @@ annotation class PlexClientIdStore
 
 @Qualifier
 annotation class PlexLibrarySelectionStore
+
+@Qualifier
+annotation class PlexLibraryCacheStore

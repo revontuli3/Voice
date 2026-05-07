@@ -41,6 +41,7 @@ import voice.core.playback.playstate.PlayStateManager
 import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
+import voice.core.plex.api.PlexLibraryRepository
 import voice.core.ui.GridCount
 import voice.core.ui.ImmutableFile
 import voice.features.bookOverview.di.BookOverviewScope
@@ -65,6 +66,7 @@ class BookOverviewViewModel(
   private val recentBookSearchDao: RecentBookSearchDao,
   private val search: BookSearch,
   private val contentRepo: BookContentRepo,
+  private val plexLibraryRepository: PlexLibraryRepository,
   private val deviceHasStoragePermissionBug: DeviceHasStoragePermissionBug,
   @ExperimentalPlaybackPersistenceQualifier
   private val experimentalPlaybackPersistenceFeatureFlag: FeatureFlag<Boolean>,
@@ -86,6 +88,10 @@ class BookOverviewViewModel(
       .collectAsState().value
     val books = remember { repo.flow() }
       .collectAsState(initial = emptyList()).value
+    val plexLibraries = remember { plexLibraryRepository.libraries }
+      .collectAsState(initial = emptyList()).value
+    val plexSelected = remember { plexLibraryRepository.selectedLibraryIds }
+      .collectAsState(initial = emptySet()).value
     val currentBookId = remember { currentBookStoreDataStore.data }
       .collectAsState(initial = null).value
     val scannerActive = remember { mediaScanner.scannerActive }
@@ -149,21 +155,34 @@ class BookOverviewViewModel(
 
     return BookOverviewViewState(
       layoutMode = layoutMode,
-      books = books
-        .groupBy {
-          it.category
-        }
-        .mapValues { (category, books) ->
+      books = buildMap {
+        val localSection = BookOverviewSection.Local
+        put(
+          localSection,
           books
-            .sortedWith(category.comparator)
+            .sortedWith(localSection.comparator)
             .associate { book ->
               book.id to book.itemViewState(
                 currentBookId = currentBookId,
                 livePlaybackState = { livePlaybackState.value },
               )
-            }
-        }
-        .toSortedMap(),
+            },
+        )
+
+        val byId = plexLibraries.associateBy { it.id }
+        plexSelected
+          .mapNotNull { id ->
+            val info = byId[id] ?: return@mapNotNull null
+            BookOverviewSection.PlexLibrary(
+              id = "plex:${id.storageKey}",
+              title = "${info.title} (${info.serverName})",
+            )
+          }
+          .sortedBy { it.title }
+          .forEach { section ->
+            put(section, emptyMap())
+          }
+      },
       playButtonState = if (playState == PlayStateManager.PlayState.Playing) {
         BookOverviewViewState.PlayButtonState.Playing
       } else {

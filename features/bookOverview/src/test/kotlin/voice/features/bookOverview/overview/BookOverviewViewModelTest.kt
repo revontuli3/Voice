@@ -10,12 +10,17 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
 import voice.core.data.BookId
 import voice.core.data.GridMode
 import voice.core.data.repo.BookContentRepo
@@ -29,20 +34,26 @@ import voice.core.playback.playstate.PlayStateManager
 import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
+import voice.core.plex.api.PlexLibraryRepository
+import voice.core.plex.api.PlexLibraryId
 import voice.core.ui.GridCount
 import voice.features.bookOverview.book
 import voice.navigation.Navigator
+import voice.features.bookOverview.overview.BookOverviewSection
 
 class BookOverviewViewModelTest {
 
   @Test
   fun `state updates the current book item from live playback`() = runTest {
+    Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+    try {
     val currentBook = book(name = "Current", time = 1_000)
     val otherBook = book(name = "Other", time = 2_000)
     val livePlaybackFlow = MutableStateFlow<LivePlaybackState?>(null)
     val viewModel = BookOverviewViewModel(
       repo = mockk<BookRepository> {
         every { flow() } returns MutableStateFlow(listOf(currentBook, otherBook))
+        every { flow(currentBook.id) } returns MutableStateFlow(currentBook)
       },
       mediaScanner = mockk<MediaScanTrigger> {
         every { scannerActive } returns MutableStateFlow(false)
@@ -57,7 +68,7 @@ class BookOverviewViewModelTest {
       gridCount = mockk<GridCount> {
         every { useGridAsDefault() } returns false
       },
-      navigator = mockk<Navigator>(),
+      navigator = mockk<Navigator>(relaxed = true),
       recentBookSearchDao = mockk<RecentBookSearchDao> {
         every { recentBookSearches() } returns MutableStateFlow(emptyList())
       },
@@ -65,21 +76,26 @@ class BookOverviewViewModelTest {
         coEvery { search(any()) } returns emptyList()
       },
       contentRepo = mockk<BookContentRepo>(),
+      plexLibraryRepository = mockk<PlexLibraryRepository>(relaxed = true) {
+        every { libraries } returns MutableStateFlow(emptyList())
+        every { selectedLibraryIds } returns MutableStateFlow<Set<PlexLibraryId>>(emptySet())
+        every { isRefreshing } returns MutableStateFlow(false)
+      },
       deviceHasStoragePermissionBug = mockk<DeviceHasStoragePermissionBug> {
         every { hasBug } returns MutableStateFlow(false)
       },
-      folderPickerInSettingsFeatureFlag = MemoryFeatureFlag(false),
       experimentalPlaybackPersistenceFeatureFlag = MemoryFeatureFlag(true),
     )
 
     backgroundScope.launchMolecule(RecompositionMode.Immediate) {
       viewModel.state()
-    }.test {
+    }.test(timeout = 5.seconds) {
       awaitItem() shouldBe BookOverviewViewState.Loading
       val initial = awaitItem()
       val initialCurrentItem = initial.currentBook(currentBook.id)
       val initialOtherItem = initial.currentBook(otherBook.id)
-      val initialKeys = initial.books.getValue(BookOverviewCategory.CURRENT).keys.toList()
+      val localSection = initial.books.keys.first { it is BookOverviewSection.Local }
+      val initialKeys = initial.books.getValue(localSection).keys.toList()
 
       initialCurrentItem shouldBe currentBook.toItemViewState()
       initialOtherItem shouldBe otherBook.toItemViewState()
@@ -94,15 +110,19 @@ class BookOverviewViewModelTest {
       livePlaybackFlow.value = livePlaybackState
       yield()
 
-      initial.books.getValue(BookOverviewCategory.CURRENT).keys.toList() shouldBe initialKeys
+      initial.books.getValue(localSection).keys.toList() shouldBe initialKeys
       initial.currentBook(currentBook.id) shouldBe currentBook.overlay(livePlaybackState).toItemViewState()
       initial.currentBook(otherBook.id) shouldBe initialOtherItem
       expectNoEvents()
     }
+    } finally {
+      Dispatchers.resetMain()
+    }
   }
 
   private fun BookOverviewViewState.currentBook(bookId: BookId): BookOverviewItemViewState {
-    return books.getValue(BookOverviewCategory.CURRENT).getValue(bookId).value
+    val localSection = books.keys.first { it is BookOverviewSection.Local }
+    return books.getValue(localSection).getValue(bookId).value
   }
 }
 

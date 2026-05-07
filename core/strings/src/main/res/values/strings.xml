@@ -160,4 +160,6 @@
     <string name="pref_plex_no_libraries">No audiobook libraries found</string>
     <string name="pref_plex_pin_instruction">Enter %1$s at plex.tv/link</string>
     <string name="pref_plex_login_failed">Login failed. Please try again.</string>
+    <string name="book_header_local">Local books</string>
+    <string name="book_plex_library_empty">No books yet</string>
 </resources>

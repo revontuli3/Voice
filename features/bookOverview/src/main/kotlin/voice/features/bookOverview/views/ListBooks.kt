@@ -3,6 +3,7 @@ package voice.features.bookOverview.views
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedCard
@@ -28,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,16 +39,17 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import voice.core.data.BookId
 import voice.core.ui.ImmutableFile
-import voice.features.bookOverview.overview.BookOverviewCategory
 import voice.features.bookOverview.overview.BookOverviewItemViewState
+import voice.features.bookOverview.overview.BookOverviewSection
 import voice.core.ui.R as UiR
+import voice.core.strings.R as StringsR
 
 private val bookCardCornerRadius = 4.dp
 private val bookCardShape = RoundedCornerShape(bookCardCornerRadius)
 
 @Composable
 internal fun ListBooks(
-  books: Map<BookOverviewCategory, Map<BookId, State<BookOverviewItemViewState>>>,
+  books: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>>,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
   showPermissionBugCard: Boolean,
@@ -59,10 +64,9 @@ internal fun ListBooks(
         PermissionBugCard(onPermissionBugCardClick)
       }
     }
-    books.forEach { (category, books) ->
-      if (books.isEmpty()) return@forEach
+    books.forEach { (section, books) ->
       stickyHeader(
-        key = category,
+        key = section.id,
         contentType = "header",
       ) {
         Header(
@@ -70,23 +74,51 @@ internal fun ListBooks(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
             .padding(vertical = 8.dp, horizontal = 8.dp),
-          category = category,
+          section = section,
         )
       }
-      items(
-        items = books.toList(),
-        key = { (bookId, _) -> bookId.value },
-        contentType = { "item" },
-      ) { (_, bookState) ->
-        ListBookRow(
-          book = bookState.value,
-          onBookClick = onBookClick,
-          onBookLongClick = onBookLongClick,
-        )
+      item(key = "row:${section.id}") {
+        if (books.isEmpty() && (section is BookOverviewSection.PlexLibrary || section is BookOverviewSection.Local)) {
+          ElevatedCard(
+            shape = bookCardShape,
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 8.dp),
+          ) {
+            Box(
+              modifier = Modifier.padding(16.dp),
+              contentAlignment = Alignment.CenterStart,
+            ) {
+              Text(
+                text = stringResource(StringsR.string.book_plex_library_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+          }
+        } else {
+          LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 8.dp),
+          ) {
+            items(
+              items = books.toList(),
+              key = { (bookId, _) -> bookId.value },
+              contentType = { "item" },
+            ) { (_, bookState) ->
+              ListBookRow(
+                modifier = Modifier.width(320.dp),
+                book = bookState.value,
+                onBookClick = onBookClick,
+                onBookLongClick = onBookLongClick,
+              )
+            }
+          }
+        }
       }
-      item {
-        Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
-      }
+    }
+    item {
+      Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
     }
   }
 }
@@ -101,7 +133,6 @@ internal fun ListBookRow(
   ElevatedCard(
     shape = bookCardShape,
     modifier = modifier
-      .fillMaxWidth()
       .combinedClickable(
         onClick = { onBookClick(book.id) },
         onLongClick = { onBookLongClick(book.id) },

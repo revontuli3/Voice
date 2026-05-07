@@ -21,6 +21,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,9 +49,9 @@ import voice.features.bookOverview.bottomSheet.BottomSheetItem
 import voice.features.bookOverview.deleteBook.DeleteBookDialog
 import voice.features.bookOverview.di.BookOverviewGraph
 import voice.features.bookOverview.editTitle.EditBookTitleDialog
-import voice.features.bookOverview.overview.BookOverviewCategory
 import voice.features.bookOverview.overview.BookOverviewItemViewState
 import voice.features.bookOverview.overview.BookOverviewLayoutMode
+import voice.features.bookOverview.overview.BookOverviewSection
 import voice.features.bookOverview.overview.BookOverviewViewState
 import voice.features.bookOverview.search.BookSearchViewState
 import voice.features.bookOverview.views.topbar.BookOverviewTopBar
@@ -244,15 +245,20 @@ internal fun BookOverview(
         .padding(contentPadding)
         .consumeWindowInsets(contentPadding),
     ) { page ->
-      val filteredBooks = when (page) {
+      val filteredBooks: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>> = when (page) {
         0 -> {
-          val current = viewState.books[BookOverviewCategory.CURRENT].orEmpty()
-          if (current.isEmpty()) emptyMap() else mapOf(BookOverviewCategory.CURRENT to current)
+          val localSection = viewState.books.keys.firstOrNull { it is BookOverviewSection.Local }
+            ?: return@HorizontalPager
+          val localBooks = viewState.books.getValue(localSection)
+          val current = localBooks.filterValues { it.value.progress > 0f && it.value.progress < 0.999f }
+          if (current.isEmpty()) {
+            emptyMap()
+          } else {
+            mapOf(BookOverviewSection.Current to current)
+          }
         }
         else -> {
           viewState.books
-            .filterKeys { it != BookOverviewCategory.CURRENT }
-            .filterValues { it.isNotEmpty() }
         }
       }
 
@@ -323,6 +329,7 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
       author = "Author",
       cover = null,
       progress = 0.8F,
+      isFinished = false,
       id = BookId(UUID.randomUUID().toString()),
       remainingTime = "01:04",
     )
@@ -331,7 +338,7 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
   override val values = sequenceOf(
     BookOverviewViewState(
       books = mapOf(
-        BookOverviewCategory.CURRENT to buildMap {
+        BookOverviewSection.Local to buildMap {
           repeat(10) {
             put(
               BookId(UUID.randomUUID().toString()),
@@ -339,14 +346,10 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
             )
           }
         },
-        BookOverviewCategory.FINISHED to buildMap {
-          repeat(2) {
-            put(
-              BookId(UUID.randomUUID().toString()),
-              mutableStateOf(book()),
-            )
-          }
-        },
+        BookOverviewSection.PlexLibrary(
+          id = "plex:server-1:1",
+          title = "Audiobooks (Home Server)",
+        ) to emptyMap(),
       ),
       layoutMode = BookOverviewLayoutMode.List,
       playButtonState = BookOverviewViewState.PlayButtonState.Paused,

@@ -9,6 +9,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.LaunchedEffect
@@ -80,6 +84,15 @@ class MainActivity : AppCompatActivity() {
             if (backStack.size > 1) {
               backStack.removeLastOrNull()
             }
+          },
+          popTransitionSpec = {
+            slideInHorizontally(
+              animationSpec = tween(),
+              initialOffsetX = { -it },
+            ) togetherWith slideOutHorizontally(
+              animationSpec = tween(),
+              targetOffsetX = { it },
+            )
           },
           entryProvider = { key ->
             navEntryResolver.create(key)

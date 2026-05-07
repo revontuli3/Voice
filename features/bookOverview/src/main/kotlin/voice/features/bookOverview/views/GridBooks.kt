@@ -16,12 +16,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,69 +37,88 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import voice.core.data.BookId
-import voice.features.bookOverview.overview.BookOverviewCategory
 import voice.features.bookOverview.overview.BookOverviewItemViewState
+import voice.features.bookOverview.overview.BookOverviewSection
 import kotlin.math.roundToInt
 import voice.core.ui.R as UiR
+import voice.core.strings.R as StringsR
 
 private val gridBookCardCornerRadius = 4.dp
 private val gridBookCardShape = RoundedCornerShape(gridBookCardCornerRadius)
 
 @Composable
 internal fun GridBooks(
-  books: Map<BookOverviewCategory, Map<BookId, State<BookOverviewItemViewState>>>,
+  books: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>>,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
   showPermissionBugCard: Boolean,
   onPermissionBugCardClick: () -> Unit,
 ) {
-  val cellCount = gridColumnCount()
-  LazyVerticalGrid(
-    columns = GridCells.Fixed(cellCount),
+  LazyColumn(
     verticalArrangement = Arrangement.spacedBy(8.dp),
-    horizontalArrangement = Arrangement.spacedBy(8.dp),
-    contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 24.dp, bottom = 4.dp),
+    contentPadding = PaddingValues(top = 24.dp, start = 8.dp, end = 8.dp, bottom = 16.dp),
   ) {
     if (showPermissionBugCard) {
-      item(
-        span = { GridItemSpan(maxLineSpan) },
-      ) {
+      item {
         PermissionBugCard(onPermissionBugCardClick)
       }
     }
-    books.forEach { (category, books) ->
-      if (books.isEmpty()) return@forEach
-      item(
-        span = { GridItemSpan(maxLineSpan) },
-        key = category,
-        contentType = "header",
-      ) {
+    books.forEach { (section, books) ->
+      item(key = "header:${section.id}") {
         Header(
           modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp),
-          category = category,
+          section = section,
         )
       }
-      items(
-        items = books.toList(),
-        key = { (bookId, _) -> bookId.value },
-        contentType = { "item" },
-      ) { (_, bookState) ->
-        GridBook(
-          book = bookState.value,
-          onBookClick = onBookClick,
-          onBookLongClick = onBookLongClick,
-        )
+
+      item(key = "row:${section.id}") {
+        if (books.isEmpty() && (section is BookOverviewSection.PlexLibrary || section is BookOverviewSection.Local)) {
+          ElevatedCard(
+            shape = gridBookCardShape,
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(horizontal = 8.dp),
+          ) {
+            Box(
+              modifier = Modifier.padding(16.dp),
+              contentAlignment = Alignment.CenterStart,
+            ) {
+              Text(
+                text = stringResource(StringsR.string.book_plex_library_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+            }
+          }
+        } else {
+          LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 8.dp),
+          ) {
+            items(
+              items = books.toList(),
+              key = { (bookId, _) -> bookId.value },
+              contentType = { "item" },
+            ) { (_, bookState) ->
+              GridBook(
+                book = bookState.value,
+                onBookClick = onBookClick,
+                onBookLongClick = onBookLongClick,
+                modifier = Modifier.width(140.dp),
+              )
+            }
+          }
+        }
       }
-      item(
-        span = { GridItemSpan(maxLineSpan) },
-      ) {
-        Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
-      }
+    }
+    item {
+      Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
     }
   }
 }
@@ -106,9 +128,10 @@ internal fun GridBook(
   book: BookOverviewItemViewState,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
+  modifier: Modifier = Modifier,
 ) {
   BoxWithConstraints(
-    modifier = Modifier
+    modifier = modifier
       .fillMaxWidth()
       .combinedClickable(
         onClick = { onBookClick(book.id) },
@@ -151,6 +174,17 @@ internal fun GridBook(
             error = painterResource(id = UiR.drawable.album_art),
             contentDescription = null,
           )
+
+          if (book.isFinished) {
+            Icon(
+              imageVector = Icons.Outlined.CheckCircle,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary,
+              modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(6.dp),
+            )
+          }
         }
 
         Spacer(Modifier.height(gapAfterCover))

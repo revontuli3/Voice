@@ -9,7 +9,7 @@ import kotlin.time.Duration
 
 @Immutable
 data class BookOverviewViewState(
-  val books: Map<BookOverviewCategory, Map<BookId, State<BookOverviewItemViewState>>>,
+  val books: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>>,
   val layoutMode: BookOverviewLayoutMode,
   val playButtonState: PlayButtonState?,
   val miniPlayer: MiniPlayerViewState?,
