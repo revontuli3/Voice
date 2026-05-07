@@ -14,6 +14,8 @@ public data class BookContent(
   val playbackSpeed: Float,
   val skipSilence: Boolean,
   val isActive: Boolean,
+  @ColumnInfo(defaultValue = "0")
+  val isFinished: Boolean,
   val lastPlayedAt: Instant,
   val author: String?,
   val name: String,

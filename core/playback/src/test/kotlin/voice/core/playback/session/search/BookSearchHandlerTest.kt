@@ -115,6 +115,7 @@ fun book(
       cover = null,
       currentChapter = chapters.first().id,
       isActive = true,
+      isFinished = false,
       lastPlayedAt = Instant.EPOCH,
       skipSilence = false,
       id = id,

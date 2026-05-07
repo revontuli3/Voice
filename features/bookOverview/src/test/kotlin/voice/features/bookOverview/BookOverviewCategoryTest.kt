@@ -13,8 +13,9 @@ class BookOverviewCategoryTest {
       val lastChapter = book.chapters.last()
       book.copy(
         content = book.content.copy(
+          isFinished = true,
           currentChapter = lastChapter.id,
-          positionInChapter = lastChapter.duration,
+          positionInChapter = 0L,
         ),
       )
     }

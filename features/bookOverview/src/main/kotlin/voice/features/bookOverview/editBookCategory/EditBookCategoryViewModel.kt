@@ -38,16 +38,16 @@ class EditBookCategoryViewModel(private val repo: BookRepository) : BottomSheetI
   ) {
     val book = repo.get(bookId) ?: return
 
-    val (currentChapter, positionInChapter) = when (item) {
+    val (currentChapter, positionInChapter, isFinished) = when (item) {
       BottomSheetItem.BookCategoryMarkAsCurrent -> {
-        book.chapters.first().id to 1L
+        Triple(book.chapters.first().id, 1L, false)
       }
       BottomSheetItem.BookCategoryMarkAsNotStarted -> {
-        book.chapters.first().id to 0L
+        Triple(book.chapters.first().id, 0L, false)
       }
       BottomSheetItem.BookCategoryMarkAsCompleted -> {
-        val lastChapter = book.chapters.last()
-        lastChapter.id to lastChapter.duration
+        val firstChapter = book.chapters.first()
+        Triple(firstChapter.id, 0L, true)
       }
       else -> return
     }
@@ -56,6 +56,7 @@ class EditBookCategoryViewModel(private val repo: BookRepository) : BottomSheetI
       it.copy(
         currentChapter = currentChapter,
         positionInChapter = positionInChapter,
+        isFinished = isFinished,
       )
     }
   }

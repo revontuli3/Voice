@@ -12,6 +12,7 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -83,6 +84,18 @@ class BookPlayViewModel(
     scope.launch {
       player.pauseIfCurrentBookDifferentFrom(bookId)
       currentBookStoreId.updateData { bookId }
+    }
+
+    scope.launch {
+      var wasCurrentBook = false
+      currentBookStoreId.data.collectLatest { currentId ->
+        if (currentId == bookId) {
+          wasCurrentBook = true
+        }
+        if (currentId == null && wasCurrentBook) {
+          navigator.goBack()
+        }
+      }
     }
   }
 
@@ -214,6 +227,13 @@ class BookPlayViewModel(
   fun playPause() {
     if (playStateManager.playState != PlayStateManager.PlayState.Playing) {
       scope.launch {
+        bookRepository.updateBook(bookId) { content ->
+          if (content.isFinished) {
+            content.copy(isFinished = false)
+          } else {
+            content
+          }
+        }
         if (batteryOptimization.shouldRequest()) {
           _viewEffects.tryEmit(BookPlayViewEffect.RequestIgnoreBatteryOptimization)
           batteryOptimization.onBatteryOptimizationsRequested()
