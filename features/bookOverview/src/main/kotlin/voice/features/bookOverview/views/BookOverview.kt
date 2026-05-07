@@ -2,13 +2,21 @@ package voice.features.bookOverview.views
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -21,6 +29,7 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -48,6 +57,7 @@ import voice.features.bookOverview.views.topbar.BookOverviewTopBar
 import voice.navigation.Destination
 import voice.navigation.NavEntryProvider
 import java.util.UUID
+import voice.core.strings.R as StringsR
 
 @ContributesTo(AppScope::class)
 interface BookOverviewProvider {
@@ -170,6 +180,8 @@ internal fun BookOverview(
   modifier: Modifier = Modifier,
 ) {
   val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+  val pagerState = rememberPagerState(pageCount = { 2 })
+  val scope = rememberCoroutineScope()
   Scaffold(
     modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
     topBar = {
@@ -183,28 +195,81 @@ internal fun BookOverview(
     },
     bottomBar = {
       val miniPlayer = viewState.miniPlayer
-      if (miniPlayer != null) {
-        MiniPlayerBar(
-          modifier = Modifier.navigationBarsPadding(),
-          state = miniPlayer,
-          onClick = { onMiniPlayerClick(miniPlayer.bookId) },
-          onRewindClick = onRewindClick,
-          onPlayPauseClick = onPlayButtonClick,
-          onFastForwardClick = onFastForwardClick,
-        )
+      Column(
+        modifier = Modifier.navigationBarsPadding(),
+      ) {
+        if (miniPlayer != null) {
+          MiniPlayerBar(
+            state = miniPlayer,
+            onClick = { onMiniPlayerClick(miniPlayer.bookId) },
+            onRewindClick = onRewindClick,
+            onPlayPauseClick = onPlayButtonClick,
+            onFastForwardClick = onFastForwardClick,
+          )
+        }
+
+        PrimaryTabRow(
+          selectedTabIndex = pagerState.currentPage,
+        ) {
+          Tab(
+            selected = pagerState.currentPage == 0,
+            onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
+            text = {
+              Text(
+                text = stringResource(StringsR.string.book_tab_home),
+                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+              )
+            },
+          )
+          Tab(
+            selected = pagerState.currentPage == 1,
+            onClick = { scope.launch { pagerState.animateScrollToPage(1) } },
+            text = {
+              Text(
+                text = stringResource(StringsR.string.book_tab_library),
+                style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
+              )
+            },
+          )
+        }
       }
     },
     contentWindowInsets = WindowInsets(0, 0, 0, 0),
   ) { contentPadding ->
-    Box(
-      Modifier
+    HorizontalPager(
+      state = pagerState,
+      verticalAlignment = androidx.compose.ui.Alignment.Top,
+      modifier = Modifier
+        .fillMaxSize()
         .padding(contentPadding)
         .consumeWindowInsets(contentPadding),
-    ) {
+    ) { page ->
+      val filteredBooks = when (page) {
+        0 -> {
+          val current = viewState.books[BookOverviewCategory.CURRENT].orEmpty()
+          if (current.isEmpty()) emptyMap() else mapOf(BookOverviewCategory.CURRENT to current)
+        }
+        else -> {
+          viewState.books
+            .filterKeys { it != BookOverviewCategory.CURRENT }
+            .filterValues { it.isNotEmpty() }
+        }
+      }
+
+      if (page == 0 && filteredBooks.isEmpty()) {
+        Box(
+          modifier = Modifier.fillMaxSize(),
+          contentAlignment = androidx.compose.ui.Alignment.Center,
+        ) {
+          Text(text = stringResource(StringsR.string.book_home_empty))
+        }
+        return@HorizontalPager
+      }
+
       when (viewState.layoutMode) {
         BookOverviewLayoutMode.List -> {
           ListBooks(
-            books = viewState.books,
+            books = filteredBooks,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
             showPermissionBugCard = viewState.showStoragePermissionBugCard,
@@ -213,7 +278,7 @@ internal fun BookOverview(
         }
         BookOverviewLayoutMode.Grid -> {
           GridBooks(
-            books = viewState.books,
+            books = filteredBooks,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
             showPermissionBugCard = viewState.showStoragePermissionBugCard,
