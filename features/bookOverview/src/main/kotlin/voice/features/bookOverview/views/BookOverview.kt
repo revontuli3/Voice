@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
@@ -28,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
@@ -245,37 +251,36 @@ internal fun BookOverview(
         .padding(contentPadding)
         .consumeWindowInsets(contentPadding),
     ) { page ->
-      val filteredBooks: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>> = when (page) {
-        0 -> {
-          val localSection = viewState.books.keys.firstOrNull { it is BookOverviewSection.Local }
-            ?: return@HorizontalPager
-          val localBooks = viewState.books.getValue(localSection)
-          val current = localBooks.filterValues { it.value.progress > 0f && it.value.progress < 0.999f }
-          if (current.isEmpty()) {
-            emptyMap()
-          } else {
-            mapOf(BookOverviewSection.Current to current)
+      if (page == 0) {
+        val localSection = viewState.books.keys.firstOrNull { it is BookOverviewSection.Local }
+          ?: return@HorizontalPager
+        val localBooks = viewState.books.getValue(localSection)
+        val current = localBooks.filterValues { it.value.progress > 0f && it.value.progress < 0.999f }
+        if (current.isEmpty()) {
+          Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+          ) {
+            Text(text = stringResource(StringsR.string.book_home_empty))
           }
+          return@HorizontalPager
         }
-        else -> {
-          viewState.books
-        }
-      }
 
-      if (page == 0 && filteredBooks.isEmpty()) {
-        Box(
-          modifier = Modifier.fillMaxSize(),
-          contentAlignment = androidx.compose.ui.Alignment.Center,
-        ) {
-          Text(text = stringResource(StringsR.string.book_home_empty))
-        }
+        HomeCurrentBooks(
+          layoutMode = viewState.layoutMode,
+          books = current,
+          onBookClick = onBookClick,
+          onBookLongClick = onBookLongClick,
+          showPermissionBugCard = viewState.showStoragePermissionBugCard,
+          onPermissionBugCardClick = onPermissionBugCardClick,
+        )
         return@HorizontalPager
       }
 
       when (viewState.layoutMode) {
         BookOverviewLayoutMode.List -> {
           ListBooks(
-            books = filteredBooks,
+            books = viewState.books,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
             showPermissionBugCard = viewState.showStoragePermissionBugCard,
@@ -284,11 +289,76 @@ internal fun BookOverview(
         }
         BookOverviewLayoutMode.Grid -> {
           GridBooks(
-            books = filteredBooks,
+            books = viewState.books,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
             showPermissionBugCard = viewState.showStoragePermissionBugCard,
             onPermissionBugCardClick = onPermissionBugCardClick,
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun HomeCurrentBooks(
+  layoutMode: BookOverviewLayoutMode,
+  books: Map<BookId, State<BookOverviewItemViewState>>,
+  onBookClick: (BookId) -> Unit,
+  onBookLongClick: (BookId) -> Unit,
+  showPermissionBugCard: Boolean,
+  onPermissionBugCardClick: () -> Unit,
+) {
+  val (minCellSize, contentType) = when (layoutMode) {
+    BookOverviewLayoutMode.List -> 320.dp to "list"
+    BookOverviewLayoutMode.Grid -> 140.dp to "grid"
+  }
+  LazyVerticalGrid(
+    columns = GridCells.Adaptive(minSize = minCellSize),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    contentPadding = PaddingValues(top = 24.dp, start = 8.dp, end = 8.dp, bottom = 16.dp),
+  ) {
+    item(
+      span = { GridItemSpan(maxLineSpan) },
+      key = "header:current",
+      contentType = "header",
+    ) {
+      Header(
+        section = BookOverviewSection.Current,
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+      )
+    }
+
+    if (showPermissionBugCard) {
+      item(
+        span = { GridItemSpan(maxLineSpan) },
+        key = "permissionBugCard",
+        contentType = "permissionBugCard",
+      ) {
+        PermissionBugCard(onPermissionBugCardClick)
+      }
+    }
+
+    items(
+      items = books.toList(),
+      key = { (bookId, _) -> bookId.value },
+      contentType = { "item:$contentType" },
+    ) { (_, bookState) ->
+      when (layoutMode) {
+        BookOverviewLayoutMode.List -> {
+          ListBookRow(
+            book = bookState.value,
+            onBookClick = onBookClick,
+            onBookLongClick = onBookLongClick,
+          )
+        }
+        BookOverviewLayoutMode.Grid -> {
+          GridBook(
+            book = bookState.value,
+            onBookClick = onBookClick,
+            onBookLongClick = onBookLongClick,
           )
         }
       }
