@@ -24,6 +24,55 @@ import voice.core.strings.R
 import voice.features.playbackScreen.BookPlayViewState
 
 @Composable
+internal fun RowScope.BookPlayAppBarActions(
+  viewState: BookPlayViewState,
+  onSleepTimerClick: () -> Unit,
+  onBookmarkClick: () -> Unit,
+  onBookmarkLongClick: () -> Unit,
+  onSpeedChangeClick: () -> Unit,
+  onSkipSilenceClick: () -> Unit,
+  onVolumeBoostClick: () -> Unit,
+) {
+  IconButton(onClick = onSleepTimerClick) {
+    Icon(
+      imageVector = if (viewState.sleepTimerState is BookPlayViewState.SleepTimerViewState.Disabled) {
+        Icons.Outlined.Bedtime
+      } else {
+        Icons.Outlined.BedtimeOff
+      },
+      contentDescription = stringResource(id = R.string.action_sleep),
+    )
+  }
+  Box(
+    modifier = Modifier
+      .size(40.dp)
+      .combinedClickable(
+        onClick = onBookmarkClick,
+        onLongClick = onBookmarkLongClick,
+        indication = ripple(bounded = false, radius = 20.dp),
+        interactionSource = remember { MutableInteractionSource() },
+      ),
+    contentAlignment = Alignment.Center,
+  ) {
+    Icon(
+      imageVector = Icons.Outlined.CollectionsBookmark,
+      contentDescription = stringResource(id = R.string.bookmark),
+    )
+  }
+  IconButton(onClick = onSpeedChangeClick) {
+    Icon(
+      imageVector = Icons.Outlined.Speed,
+      contentDescription = stringResource(id = R.string.playback_speed),
+    )
+  }
+  OverflowMenu(
+    skipSilence = viewState.skipSilence,
+    onSkipSilenceClick = onSkipSilenceClick,
+    onVolumeBoostClick = onVolumeBoostClick,
+  )
+}
+
+@Composable
 internal fun BookPlayAppBar(
   viewState: BookPlayViewState,
   onSleepTimerClick: () -> Unit,
@@ -34,47 +83,18 @@ internal fun BookPlayAppBar(
   onVolumeBoostClick: () -> Unit,
   useLandscapeLayout: Boolean,
 ) {
-  val appBarActions: @Composable RowScope.() -> Unit = {
-    IconButton(onClick = onSleepTimerClick) {
-      Icon(
-        imageVector = if (viewState.sleepTimerState is BookPlayViewState.SleepTimerViewState.Disabled) {
-          Icons.Outlined.Bedtime
-        } else {
-          Icons.Outlined.BedtimeOff
-        },
-        contentDescription = stringResource(id = R.string.action_sleep),
-      )
-    }
-    Box(
-      modifier = Modifier
-        .size(40.dp)
-        .combinedClickable(
-          onClick = onBookmarkClick,
-          onLongClick = onBookmarkLongClick,
-          indication = ripple(bounded = false, radius = 20.dp),
-          interactionSource = remember { MutableInteractionSource() },
-        ),
-      contentAlignment = Alignment.Center,
-    ) {
-      Icon(
-        imageVector = Icons.Outlined.CollectionsBookmark,
-        contentDescription = stringResource(id = R.string.bookmark),
-      )
-    }
-    IconButton(onClick = onSpeedChangeClick) {
-      Icon(
-        imageVector = Icons.Outlined.Speed,
-        contentDescription = stringResource(id = R.string.playback_speed),
-      )
-    }
-    OverflowMenu(
-      skipSilence = viewState.skipSilence,
-      onSkipSilenceClick = onSkipSilenceClick,
-      onVolumeBoostClick = onVolumeBoostClick,
-    )
-  }
   TopAppBar(
-    actions = appBarActions,
+    actions = {
+      BookPlayAppBarActions(
+        viewState = viewState,
+        onSleepTimerClick = onSleepTimerClick,
+        onBookmarkClick = onBookmarkClick,
+        onBookmarkLongClick = onBookmarkLongClick,
+        onSpeedChangeClick = onSpeedChangeClick,
+        onSkipSilenceClick = onSkipSilenceClick,
+        onVolumeBoostClick = onVolumeBoostClick,
+      )
+    },
     title = { },
   )
 }

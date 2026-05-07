@@ -37,16 +37,18 @@ internal fun BookPlayView(
       SnackbarHost(hostState = snackbarHostState)
     },
     topBar = {
-      BookPlayAppBar(
-        viewState = viewState,
-        onSleepTimerClick = onSleepTimerClick,
-        onBookmarkClick = onBookmarkClick,
-        onBookmarkLongClick = onBookmarkLongClick,
-        onSpeedChangeClick = onSpeedChangeClick,
-        onSkipSilenceClick = onSkipSilenceClick,
-        onVolumeBoostClick = onVolumeBoostClick,
-        useLandscapeLayout = useLandscapeLayout,
-      )
+      if (!useLandscapeLayout) {
+        BookPlayAppBar(
+          viewState = viewState,
+          onSleepTimerClick = onSleepTimerClick,
+          onBookmarkClick = onBookmarkClick,
+          onBookmarkLongClick = onBookmarkLongClick,
+          onSpeedChangeClick = onSpeedChangeClick,
+          onSkipSilenceClick = onSkipSilenceClick,
+          onVolumeBoostClick = onVolumeBoostClick,
+          useLandscapeLayout = useLandscapeLayout,
+        )
+      }
     },
     content = {
       BookPlayContent(
@@ -59,6 +61,12 @@ internal fun BookPlayView(
         onSkipToNext = onSkipToNext,
         onSkipToPrevious = onSkipToPrevious,
         onCurrentChapterClick = onCurrentChapterClick,
+        onSleepTimerClick = onSleepTimerClick,
+        onBookmarkClick = onBookmarkClick,
+        onBookmarkLongClick = onBookmarkLongClick,
+        onSpeedChangeClick = onSpeedChangeClick,
+        onSkipSilenceClick = onSkipSilenceClick,
+        onVolumeBoostClick = onVolumeBoostClick,
         useLandscapeLayout = useLandscapeLayout,
       )
     },

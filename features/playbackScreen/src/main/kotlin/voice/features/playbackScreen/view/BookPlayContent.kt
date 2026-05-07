@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.toUpperCase
@@ -34,6 +35,12 @@ internal fun BookPlayContent(
   onSkipToNext: () -> Unit,
   onSkipToPrevious: () -> Unit,
   onCurrentChapterClick: () -> Unit,
+  onSleepTimerClick: () -> Unit,
+  onBookmarkClick: () -> Unit,
+  onBookmarkLongClick: () -> Unit,
+  onSpeedChangeClick: () -> Unit,
+  onSkipSilenceClick: () -> Unit,
+  onVolumeBoostClick: () -> Unit,
   useLandscapeLayout: Boolean,
 ) {
   if (useLandscapeLayout) {
@@ -54,6 +61,24 @@ internal fun BookPlayContent(
           .weight(1F),
         verticalArrangement = Arrangement.Center,
       ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(end = 8.dp, top = 8.dp),
+          horizontalArrangement = Arrangement.End,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          BookPlayAppBarActions(
+            viewState = viewState,
+            onSleepTimerClick = onSleepTimerClick,
+            onBookmarkClick = onBookmarkClick,
+            onBookmarkLongClick = onBookmarkLongClick,
+            onSpeedChangeClick = onSpeedChangeClick,
+            onSkipSilenceClick = onSkipSilenceClick,
+            onVolumeBoostClick = onVolumeBoostClick,
+          )
+        }
+
         Text(
           text = viewState.title,
           style = MaterialTheme.typography.titleMedium,
