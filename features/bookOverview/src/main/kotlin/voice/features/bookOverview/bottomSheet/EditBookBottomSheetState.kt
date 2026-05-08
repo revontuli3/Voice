@@ -22,6 +22,7 @@ enum class BottomSheetItem(
   InternetCover(StringsR.string.download_book_cover, Icons.Outlined.Download),
   FileCover(StringsR.string.pick_book_cover, Icons.Outlined.Image),
   DeleteBook(StringsR.string.delete_book_bottom_sheet_title, Icons.Outlined.Delete),
+  PlexDeleteDownloaded(StringsR.string.plex_delete_downloaded, Icons.Outlined.Delete),
   BookCategoryMarkAsNotStarted(StringsR.string.mark_as_not_started, Icons.Outlined.HourglassEmpty),
   BookCategoryMarkAsCurrent(StringsR.string.mark_as_current, Icons.Outlined.NotStarted),
   BookCategoryMarkAsCompleted(StringsR.string.mark_as_completed, Icons.Outlined.Done),

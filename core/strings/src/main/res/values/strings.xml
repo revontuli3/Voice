@@ -165,6 +165,9 @@
     <string name="plex_download_title">Download?</string>
     <string name="plex_download_message">Download %1$s?</string>
     <string name="plex_download_confirm">Download</string>
+    <string name="plex_downloading_title">Downloading…</string>
+    <string name="plex_downloading_cancel">Cancel download</string>
+    <string name="plex_delete_downloaded">Delete downloaded</string>
     <string name="book_authors_title">Authors</string>
     <string name="book_authors_all">All Authors</string>
     <string name="book_author_unknown">Unknown</string>

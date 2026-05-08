@@ -6,6 +6,7 @@ import androidx.room.TypeConverter
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import voice.core.data.BookId
+import voice.core.data.BookSource
 import voice.core.data.Bookmark
 import voice.core.data.ChapterId
 import voice.core.data.MarkData
@@ -78,4 +79,17 @@ internal class Converters {
 
   @TypeConverter
   fun fromBookmarkId(id: Bookmark.Id): String = id.value.toString()
+
+  @TypeConverter
+  fun toBookSource(value: Int): BookSource = when (value) {
+    0 -> BookSource.User
+    1 -> BookSource.PlexDownload
+    else -> BookSource.User
+  }
+
+  @TypeConverter
+  fun fromBookSource(source: BookSource): Int = when (source) {
+    BookSource.User -> 0
+    BookSource.PlexDownload -> 1
+  }
 }

@@ -124,6 +124,21 @@ internal constructor(
     }
   }
 
+  override suspend fun setProgress(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+    progress: Float,
+    isFinished: Boolean,
+  ) {
+    val clamped = progress.coerceIn(0f, 1f)
+    updateState(libraryId, plexBookId) { current ->
+      current.copy(
+        progress = clamped,
+        isFinished = isFinished,
+      )
+    }
+  }
+
   override suspend fun setDownloaded(
     libraryId: PlexLibraryId,
     plexBookId: String,

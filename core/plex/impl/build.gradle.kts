@@ -7,6 +7,9 @@ plugins {
 dependencies {
   implementation(projects.core.plex.api)
   implementation(projects.core.common)
+  implementation(projects.core.data.api)
+  implementation(projects.core.documentfile)
+  implementation(projects.core.scanner)
 
   implementation(libs.bundles.retrofit)
   implementation(libs.okhttp)

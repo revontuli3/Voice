@@ -24,11 +24,13 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +64,7 @@ import voice.features.bookOverview.overview.BookOverviewLayoutMode
 import voice.features.bookOverview.overview.BookOverviewSection
 import voice.features.bookOverview.overview.BookOverviewViewState
 import voice.features.bookOverview.overview.PlexDownloadDialogState
+import voice.core.plex.api.PlexDownloadState
 import voice.features.bookOverview.search.BookSearchViewState
 import voice.features.bookOverview.views.topbar.BookOverviewTopBar
 import voice.navigation.Destination
@@ -171,6 +174,47 @@ fun BookOverviewScreen(modifier: Modifier = Modifier) {
         }
       },
     )
+  }
+
+  val downloads = bookGraph.plexDownloadManager.downloads.collectAsState(initial = emptyMap()).value
+  val activeDownloadId = bookOverviewViewModel.plexActiveDownload
+  if (activeDownloadId != null) {
+    val downloadState = downloads[activeDownloadId.key]
+    if (downloadState == null) {
+      bookOverviewViewModel.onPlexDownloadFinished()
+    } else if (downloadState is PlexDownloadState.Downloading) {
+      AlertDialog(
+        onDismissRequest = {},
+        title = { Text(text = stringResource(StringsR.string.plex_downloading_title)) },
+        text = {
+          Column {
+            val title = downloadState.currentTrackTitle
+            if (!title.isNullOrBlank()) {
+              Text(text = title)
+            }
+            Text(text = "${downloadState.downloadedTracks}/${downloadState.totalTracks}")
+            LinearProgressIndicator(progress = { downloadState.progress })
+          }
+        },
+        confirmButton = {},
+        dismissButton = {
+          TextButton(onClick = bookOverviewViewModel::onPlexDownloadCancel) {
+            Text(text = stringResource(StringsR.string.plex_downloading_cancel))
+          }
+        },
+      )
+    } else if (downloadState is PlexDownloadState.Failed) {
+      AlertDialog(
+        onDismissRequest = bookOverviewViewModel::onPlexDownloadFinished,
+        title = { Text(text = stringResource(StringsR.string.generic_error_message)) },
+        text = { Text(text = downloadState.message) },
+        confirmButton = {
+          TextButton(onClick = bookOverviewViewModel::onPlexDownloadFinished) {
+            Text(text = stringResource(StringsR.string.close))
+          }
+        },
+      )
+    }
   }
 
   if (showBottomSheet) {
@@ -283,10 +327,10 @@ internal fun BookOverview(
         .consumeWindowInsets(contentPadding),
     ) { page ->
       if (page == 0) {
-        val localSection = viewState.books.keys.firstOrNull { it is BookOverviewSection.Local }
-          ?: return@HorizontalPager
-        val localBooks = viewState.books.getValue(localSection)
-        val current = localBooks.filterValues { it.value.progress > 0f && it.value.progress < 0.999f }
+        val current = viewState.books.values
+          .flatMap { it.entries }
+          .associate { it.toPair() }
+          .filterValues { it.value.progress > 0f && it.value.progress < 0.999f }
         if (current.isEmpty()) {
           Box(
             modifier = Modifier.fillMaxSize(),

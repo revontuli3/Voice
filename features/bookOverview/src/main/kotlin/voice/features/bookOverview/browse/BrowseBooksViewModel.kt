@@ -16,10 +16,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import voice.core.data.Book
 import voice.core.data.BookId
+import voice.core.data.BookSource
 import voice.core.data.GridMode
 import voice.core.data.repo.BookRepository
 import voice.core.data.store.GridModeStore
 import voice.core.plex.api.PlexBookRepository
+import voice.core.plex.api.PlexDownloadId
+import voice.core.plex.api.PlexDownloadManager
 import voice.core.plex.api.PlexLibraryId
 import voice.core.plex.api.PlexLibraryRepository
 import voice.core.strings.R as StringsR
@@ -37,6 +40,7 @@ import voice.navigation.Navigator
 class BrowseBooksViewModel(
   private val bookRepository: BookRepository,
   private val plexBookRepository: PlexBookRepository,
+  private val plexDownloadManager: PlexDownloadManager,
   private val plexLibraryRepository: PlexLibraryRepository,
   @GridModeStore
   private val gridModeStore: DataStore<GridMode>,
@@ -50,6 +54,9 @@ class BrowseBooksViewModel(
   private val scope = MainScope()
 
   var plexDownloadDialog by mutableStateOf<PlexDownloadDialogState?>(null)
+    private set
+
+  var plexActiveDownload by mutableStateOf<PlexDownloadId?>(null)
     private set
 
   @Composable
@@ -97,6 +104,7 @@ class BrowseBooksViewModel(
       .collectAsState(initial = emptyList()).value
 
     val filtered = books.filter { it.content.isActive }
+      .filter { it.content.source == BookSource.User }
       .filter { it.matchesFilter() }
       .sortedWith(BookOverviewSection.Local.comparator)
       .map { it.toItemViewState() }
@@ -191,13 +199,7 @@ class BrowseBooksViewModel(
         return@launch
       }
 
-      val localBooks = bookRepository.flow().first()
-      val matches = localBooks.filter { book ->
-        book.content.name.equals(plexBook.title, ignoreCase = true) &&
-          (book.content.author ?: "").equals(plexBook.author ?: "", ignoreCase = true)
-      }
-      val local = matches.singleOrNull() ?: return@launch
-      navigator.goTo(Destination.Playback(local.id))
+      navigator.goTo(Destination.Playback(plexLocalBookId(plexInfo.libraryId, plexInfo.plexBookId)))
     }
   }
 
@@ -208,13 +210,18 @@ class BrowseBooksViewModel(
   fun onPlexDownloadConfirm() {
     val dialog = plexDownloadDialog ?: return
     plexDownloadDialog = null
-    scope.launch {
-      plexBookRepository.setDownloaded(
-        libraryId = dialog.libraryId,
-        plexBookId = dialog.plexBookId,
-        downloaded = true,
-      )
-    }
+    plexActiveDownload = PlexDownloadId(dialog.libraryId, dialog.plexBookId)
+    plexDownloadManager.startAlbumDownload(dialog.libraryId, dialog.plexBookId)
+  }
+
+  fun onPlexDownloadCancel() {
+    val active = plexActiveDownload ?: return
+    plexActiveDownload = null
+    plexDownloadManager.cancel(active.libraryId, active.plexBookId)
+  }
+
+  fun onPlexDownloadFinished() {
+    plexActiveDownload = null
   }
 
   fun onBack() {
@@ -252,4 +259,11 @@ private fun parsePlexBookId(id: BookId): PlexBookIdParts? {
   if (plexBookId.isEmpty()) return null
   val libraryId = PlexLibraryId.fromStorageKey(storageKey) ?: return null
   return PlexBookIdParts(libraryId = libraryId, plexBookId = plexBookId)
+}
+
+private fun plexLocalBookId(
+  libraryId: PlexLibraryId,
+  plexBookId: String,
+): BookId {
+  return BookId("voice://plex/${libraryId.storageKey}/$plexBookId")
 }

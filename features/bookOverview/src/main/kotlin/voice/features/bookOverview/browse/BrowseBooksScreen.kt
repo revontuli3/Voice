@@ -19,8 +19,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +37,7 @@ import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
 import voice.core.common.rootGraphAs
 import voice.core.data.BookId
+import voice.core.plex.api.PlexDownloadState
 import voice.core.strings.R as StringsR
 import voice.features.bookOverview.overview.BookOverviewLayoutMode
 import voice.features.bookOverview.views.GridBook
@@ -95,6 +98,48 @@ fun BrowseBooks(
         }
       },
     )
+  }
+
+  val downloads = rootGraphAs<voice.features.bookOverview.di.BookOverviewGraph>().plexDownloadManager.downloads
+    .collectAsState(initial = emptyMap()).value
+  val activeDownloadId = viewModel.plexActiveDownload
+  if (activeDownloadId != null) {
+    val downloadState = downloads[activeDownloadId.key]
+    if (downloadState == null) {
+      viewModel.onPlexDownloadFinished()
+    } else if (downloadState is PlexDownloadState.Downloading) {
+      AlertDialog(
+        onDismissRequest = {},
+        title = { Text(text = stringResource(StringsR.string.plex_downloading_title)) },
+        text = {
+          Column {
+            val title = downloadState.currentTrackTitle
+            if (!title.isNullOrBlank()) {
+              Text(text = title)
+            }
+            Text(text = "${downloadState.downloadedTracks}/${downloadState.totalTracks}")
+            LinearProgressIndicator(progress = { downloadState.progress })
+          }
+        },
+        confirmButton = {},
+        dismissButton = {
+          TextButton(onClick = viewModel::onPlexDownloadCancel) {
+            Text(text = stringResource(StringsR.string.plex_downloading_cancel))
+          }
+        },
+      )
+    } else if (downloadState is PlexDownloadState.Failed) {
+      AlertDialog(
+        onDismissRequest = viewModel::onPlexDownloadFinished,
+        title = { Text(text = stringResource(StringsR.string.generic_error_message)) },
+        text = { Text(text = downloadState.message) },
+        confirmButton = {
+          TextButton(onClick = viewModel::onPlexDownloadFinished) {
+            Text(text = stringResource(StringsR.string.close))
+          }
+        },
+      )
+    }
   }
 
   BrowseBooksView(

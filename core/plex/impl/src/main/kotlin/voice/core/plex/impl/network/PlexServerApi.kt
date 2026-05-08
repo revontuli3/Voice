@@ -29,4 +29,12 @@ interface PlexServerApi {
     @Header("X-Plex-Client-Identifier") clientIdentifier: String,
     @Header("Accept") accept: String = "application/json",
   ): PlexLibraryArtistsResponse
+
+  @GET
+  suspend fun libraryMetadataChildren(
+    @Url url: String,
+    @Header("X-Plex-Token") authToken: String,
+    @Header("X-Plex-Client-Identifier") clientIdentifier: String,
+    @Header("Accept") accept: String = "application/json",
+  ): PlexLibraryMetadataChildrenResponse
 }

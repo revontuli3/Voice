@@ -25,6 +25,7 @@ import kotlinx.coroutines.launch
 import voice.core.common.comparator.sortedNaturally
 import voice.core.data.Book
 import voice.core.data.BookId
+import voice.core.data.BookSource
 import voice.core.data.GridMode
 import voice.core.data.durationMs
 import voice.core.data.markForPosition
@@ -44,6 +45,8 @@ import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
 import voice.core.plex.api.PlexLibraryId
 import voice.core.plex.api.PlexBookRepository
+import voice.core.plex.api.PlexDownloadId
+import voice.core.plex.api.PlexDownloadManager
 import voice.core.plex.api.PlexLibraryRepository
 import voice.navigation.BrowseSource
 import voice.core.ui.GridCount
@@ -72,6 +75,7 @@ class BookOverviewViewModel(
   private val contentRepo: BookContentRepo,
   private val plexLibraryRepository: PlexLibraryRepository,
   private val plexBookRepository: PlexBookRepository,
+  private val plexDownloadManager: PlexDownloadManager,
   private val deviceHasStoragePermissionBug: DeviceHasStoragePermissionBug,
   @ExperimentalPlaybackPersistenceQualifier
   private val experimentalPlaybackPersistenceFeatureFlag: FeatureFlag<Boolean>,
@@ -82,6 +86,9 @@ class BookOverviewViewModel(
   private var query by mutableStateOf("")
 
   var plexDownloadDialog by mutableStateOf<PlexDownloadDialogState?>(null)
+    private set
+
+  var plexActiveDownload by mutableStateOf<PlexDownloadId?>(null)
     private set
 
   fun attach() {
@@ -140,6 +147,25 @@ class BookOverviewViewModel(
       null
     }
 
+    LaunchedEffect(currentBook) {
+      val book = currentBook ?: return@LaunchedEffect
+      if (book.content.source != BookSource.PlexDownload) return@LaunchedEffect
+      val storageKey = book.content.plexLibraryStorageKey ?: return@LaunchedEffect
+      val plexBookId = book.content.plexBookId ?: return@LaunchedEffect
+      val libraryId = PlexLibraryId.fromStorageKey(storageKey) ?: return@LaunchedEffect
+      val progress = if (book.duration > 0) {
+        book.position.toFloat() / book.duration.toFloat()
+      } else {
+        0f
+      }
+      plexBookRepository.setProgress(
+        libraryId = libraryId,
+        plexBookId = plexBookId,
+        progress = progress,
+        isFinished = book.content.isFinished,
+      )
+    }
+
     val miniPlayer = if (currentBook != null) {
       val liveState = livePlaybackState.value
       val book = if (experimentalPlaybackPersistence && liveState != null) {
@@ -170,6 +196,7 @@ class BookOverviewViewModel(
         put(
           localSection,
           books
+            .filter { it.content.source == BookSource.User }
             .sortedWith(localSection.comparator)
             .associate { book ->
               book.id to book.itemViewState(
@@ -299,13 +326,7 @@ class BookOverviewViewModel(
         return@launch
       }
 
-      val localBooks = repo.flow().first()
-      val matches = localBooks.filter { book ->
-        book.content.name.equals(plexBook.title, ignoreCase = true) &&
-          (book.content.author ?: "").equals(plexBook.author ?: "", ignoreCase = true)
-      }
-      val local = matches.singleOrNull() ?: return@launch
-      navigator.goTo(Destination.Playback(local.id))
+      navigator.goTo(Destination.Playback(plexLocalBookId(plexInfo.libraryId, plexInfo.plexBookId)))
     }
   }
 
@@ -316,13 +337,18 @@ class BookOverviewViewModel(
   fun onPlexDownloadConfirm() {
     val dialog = plexDownloadDialog ?: return
     plexDownloadDialog = null
-    scope.launch {
-      plexBookRepository.setDownloaded(
-        libraryId = dialog.libraryId,
-        plexBookId = dialog.plexBookId,
-        downloaded = true,
-      )
-    }
+    plexActiveDownload = PlexDownloadId(dialog.libraryId, dialog.plexBookId)
+    plexDownloadManager.startAlbumDownload(dialog.libraryId, dialog.plexBookId)
+  }
+
+  fun onPlexDownloadCancel() {
+    val active = plexActiveDownload ?: return
+    plexActiveDownload = null
+    plexDownloadManager.cancel(active.libraryId, active.plexBookId)
+  }
+
+  fun onPlexDownloadFinished() {
+    plexActiveDownload = null
   }
 
   fun onSectionClick(section: BookOverviewSection) {
@@ -405,6 +431,13 @@ private fun parsePlexBookId(id: BookId): PlexBookIdParts? {
   if (plexBookId.isEmpty()) return null
   val libraryId = PlexLibraryId.fromStorageKey(storageKey) ?: return null
   return PlexBookIdParts(libraryId = libraryId, plexBookId = plexBookId)
+}
+
+private fun plexLocalBookId(
+  libraryId: PlexLibraryId,
+  plexBookId: String,
+): BookId {
+  return BookId("voice://plex/${libraryId.storageKey}/$plexBookId")
 }
 
 @Composable

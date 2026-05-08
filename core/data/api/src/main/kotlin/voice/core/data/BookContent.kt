@@ -7,6 +7,11 @@ import androidx.room.PrimaryKey
 import java.io.File
 import java.time.Instant
 
+public enum class BookSource {
+  User,
+  PlexDownload,
+}
+
 @Entity(tableName = "content2")
 public data class BookContent(
   @PrimaryKey
@@ -14,6 +19,8 @@ public data class BookContent(
   val playbackSpeed: Float,
   val skipSilence: Boolean,
   val isActive: Boolean,
+  @ColumnInfo(defaultValue = "0")
+  val source: BookSource = BookSource.User,
   @ColumnInfo(defaultValue = "0")
   val isFinished: Boolean,
   val lastPlayedAt: Instant,
@@ -30,6 +37,8 @@ public data class BookContent(
   val narrator: String?,
   val series: String?,
   val part: String?,
+  val plexLibraryStorageKey: String? = null,
+  val plexBookId: String? = null,
 ) {
 
   @Ignore

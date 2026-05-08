@@ -13,6 +13,12 @@ public interface PlexBookRepository {
     libraryId: PlexLibraryId,
     plexBookId: String,
   )
+  public suspend fun setProgress(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+    progress: Float,
+    isFinished: Boolean,
+  )
   public suspend fun setDownloaded(
     libraryId: PlexLibraryId,
     plexBookId: String,
