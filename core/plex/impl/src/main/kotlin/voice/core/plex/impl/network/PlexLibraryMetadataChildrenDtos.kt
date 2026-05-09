@@ -21,6 +21,9 @@ data class PlexTrackDto(
   val index: Int? = null,
   val duration: Long? = null,
   val addedAt: Long? = null,
+  val viewOffset: Long? = null,
+  val viewCount: Long? = null,
+  val lastViewedAt: Long? = null,
   @SerialName("Media") val media: List<PlexMediaDto> = emptyList(),
 )
 

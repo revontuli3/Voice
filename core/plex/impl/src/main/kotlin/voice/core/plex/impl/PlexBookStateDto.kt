@@ -8,6 +8,8 @@ data class PlexBookStateDto(
   val isFinished: Boolean = false,
   val progress: Float = 0f,
   val downloaded: Boolean = false,
+  val lastSuccessfulTimelinePushEpochSeconds: Long? = null,
+  val lastServerProgressIngestEpochSeconds: Long? = null,
 )
 
 internal fun plexBookStateKey(

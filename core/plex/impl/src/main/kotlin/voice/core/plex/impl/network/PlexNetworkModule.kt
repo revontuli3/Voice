@@ -5,6 +5,7 @@ import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import kotlinx.serialization.json.Json
+import voice.core.common.DispatcherProvider
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -18,6 +19,13 @@ interface PlexNetworkModule {
   @SingleIn(AppScope::class)
   @PlexHttpClient
   fun plexClient(): OkHttpClient = OkHttpClient.Builder().build()
+
+  @Provides
+  @SingleIn(AppScope::class)
+  fun plexHttpTimelineClient(
+    @PlexHttpClient client: OkHttpClient,
+    dispatcherProvider: DispatcherProvider,
+  ): PlexHttpTimelineClient = PlexHttpTimelineClient(client, dispatcherProvider)
 
   @Provides
   @SingleIn(AppScope::class)

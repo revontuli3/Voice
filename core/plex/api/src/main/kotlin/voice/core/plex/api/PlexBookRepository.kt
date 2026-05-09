@@ -24,4 +24,18 @@ public interface PlexBookRepository {
     plexBookId: String,
     downloaded: Boolean,
   )
+
+  /** Merged from Plex track metadata for titles that are not downloaded locally ([PlexBookStateDto.downloaded] false). */
+  public suspend fun ingestServerSyncedProgress(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+    progress: Float,
+    isFinished: Boolean,
+  )
+
+  /** Call after a successful [POST /:/timeline](https://developer.plex.tv/pms/). */
+  public suspend fun recordSuccessfulTimelinePush(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+  )
 }

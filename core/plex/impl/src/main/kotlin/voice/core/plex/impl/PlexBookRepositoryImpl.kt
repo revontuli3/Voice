@@ -5,14 +5,17 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import java.time.Instant
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import voice.core.common.DispatcherProvider
 import voice.core.common.MainScope
 import voice.core.logging.api.Logger
@@ -23,6 +26,7 @@ import voice.core.plex.api.PlexLibraryId
 import voice.core.plex.impl.network.PlexAuthApi
 import voice.core.plex.impl.network.PlexResourceDto
 import voice.core.plex.impl.network.PlexServerApi
+import voice.core.plex.impl.network.PlexServerConnector
 import voice.core.plex.impl.store.PlexAccountStore
 import voice.core.plex.impl.store.PlexBookStateStore
 import voice.core.plex.impl.store.PlexBooksCacheStore
@@ -43,10 +47,13 @@ internal constructor(
   private val booksCacheStore: DataStore<Map<String, List<PlexBook>>>,
   @PlexBookStateStore
   private val bookStateStore: DataStore<Map<String, PlexBookStateDto>>,
+  private val serverConnector: PlexServerConnector,
+  private val timelineClient: PlexScrobbleAndTimelineClient,
   dispatcherProvider: DispatcherProvider,
 ) : PlexBookRepository {
 
   private val scope = MainScope(dispatcherProvider)
+  private val ioDispatcher = dispatcherProvider.io
 
   private val refreshing = MutableStateFlow(false)
   private var refreshJob: Job? = null
@@ -113,6 +120,15 @@ internal constructor(
     updateState(libraryId, plexBookId) { current ->
       current.copy(isFinished = false, progress = 0f)
     }
+    scope.launch(ioDispatcher) {
+      try {
+        if (!timelineClient.unscrobbleAlbum(libraryId, plexBookId)) {
+          Logger.w(Throwable("Plex unscrobble rejected"))
+        }
+      } catch (t: Throwable) {
+        Logger.w(t, "Plex unscrobble failed")
+      }
+    }
   }
 
   override suspend fun markAsCompleted(
@@ -121,6 +137,15 @@ internal constructor(
   ) {
     updateState(libraryId, plexBookId) { current ->
       current.copy(isFinished = true, progress = 1f)
+    }
+    scope.launch(ioDispatcher) {
+      try {
+        if (!timelineClient.scrobbleAlbum(libraryId, plexBookId)) {
+          Logger.w(Throwable("Plex scrobble rejected"))
+        }
+      } catch (t: Throwable) {
+        Logger.w(t, "Plex scrobble failed")
+      }
     }
   }
 
@@ -146,6 +171,39 @@ internal constructor(
   ) {
     updateState(libraryId, plexBookId) { current ->
       current.copy(downloaded = downloaded)
+    }
+  }
+
+  override suspend fun ingestServerSyncedProgress(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+    progress: Float,
+    isFinished: Boolean,
+  ) {
+    val nowSec = Instant.now().epochSecond
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    updateState(libraryId, plexBookId) { s ->
+      if (s.downloaded) return@updateState s
+      val lastPush = s.lastSuccessfulTimelinePushEpochSeconds ?: 0L
+      val lastIngest = s.lastServerProgressIngestEpochSeconds ?: 0L
+      if (nowSec - lastPush < PUSH_GRACE_AFTER_TIMELINE_SEC && lastPush >= lastIngest) {
+        return@updateState s
+      }
+      s.copy(
+        progress = clampedProgress,
+        isFinished = isFinished,
+        lastServerProgressIngestEpochSeconds = nowSec,
+      )
+    }
+  }
+
+  override suspend fun recordSuccessfulTimelinePush(
+    libraryId: PlexLibraryId,
+    plexBookId: String,
+  ) {
+    val nowSec = Instant.now().epochSecond
+    updateState(libraryId, plexBookId) {
+      it.copy(lastSuccessfulTimelinePushEpochSeconds = nowSec)
     }
   }
 
@@ -220,6 +278,13 @@ internal constructor(
         }
 
         booksCacheStore.updateData { newCache.toMap() }
+
+        withContext(ioDispatcher) {
+          newCache.forEach { (storageKey, booksForLib) ->
+            val libId = PlexLibraryId.fromStorageKey(storageKey) ?: return@forEach
+            ingestServerProgressSamples(account, libId, booksForLib)
+          }
+        }
       } catch (t: Throwable) {
         Logger.w(t, "Failed to refresh Plex books")
       } finally {
@@ -245,6 +310,53 @@ internal constructor(
     val https = connections.firstOrNull { it.protocol == "https" }
     if (https != null) return https.uri
     return connections.first().uri
+  }
+
+  private suspend fun ingestServerProgressSamples(
+    account: PlexAccount,
+    libraryId: PlexLibraryId,
+    albums: List<PlexBook>,
+  ) {
+    val conn = serverConnector.connection(libraryId) ?: return
+    val states = bookStateStore.data.first()
+    val candidates = albums.asSequence()
+      .filter { book ->
+        val dto = states[plexBookStateKey(libraryId, book.id)] ?: PlexBookStateDto()
+        val hasActivity = book.lastViewedAtEpochSeconds != null
+        hasActivity && !dto.downloaded
+      }
+      .sortedByDescending { it.lastViewedAtEpochSeconds ?: 0L }
+      .take(MAX_ALBUMS_PROGRESS_SYNC_PER_LIBRARY)
+      .toList()
+
+    for (album in candidates) {
+      runCatching {
+        val childrenUrl =
+          "${conn.baseUri.trimEnd('/')}/library/metadata/${album.id}/children"
+        val tracks = serverApi.libraryMetadataChildren(
+          url = childrenUrl,
+          authToken = conn.token,
+          clientIdentifier = account.clientIdentifier,
+        ).mediaContainer.metadata
+
+        val aggregated = PlexAlbumProgressAggregator.fromTracks(tracks)
+          ?: timelineClient.fetchSingleMetadataProgress(libraryId, album.id)
+          ?: return@runCatching
+        ingestServerSyncedProgress(
+          libraryId = libraryId,
+          plexBookId = album.id,
+          progress = aggregated.first,
+          isFinished = aggregated.second,
+        )
+      }.onFailure { t ->
+        Logger.w(t, "Plex ingest progress failed for album ${album.id}")
+      }
+    }
+  }
+
+  private companion object {
+    const val MAX_ALBUMS_PROGRESS_SYNC_PER_LIBRARY = 40
+    const val PUSH_GRACE_AFTER_TIMELINE_SEC = 45L
   }
 }
 

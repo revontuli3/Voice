@@ -37,6 +37,7 @@ import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
 import voice.core.common.rootGraphAs
 import voice.core.data.BookId
+import voice.core.plex.api.PlexDownloadManager
 import voice.core.plex.api.PlexDownloadState
 import voice.core.strings.R as StringsR
 import voice.features.bookOverview.overview.BookOverviewLayoutMode
@@ -50,6 +51,7 @@ import voice.navigation.NavEntryProvider
 @ContributesTo(AppScope::class)
 interface BrowseBooksGraph {
   val browseBooksViewModelFactory: BrowseBooksViewModel.Factory
+  val plexDownloadManager: PlexDownloadManager
 }
 
 @ContributesTo(AppScope::class)
@@ -100,7 +102,7 @@ fun BrowseBooks(
     )
   }
 
-  val downloads = rootGraphAs<voice.features.bookOverview.di.BookOverviewGraph>().plexDownloadManager.downloads
+  val downloads = rootGraphAs<BrowseBooksGraph>().plexDownloadManager.downloads
     .collectAsState(initial = emptyMap()).value
   val activeDownloadId = viewModel.plexActiveDownload
   if (activeDownloadId != null) {
