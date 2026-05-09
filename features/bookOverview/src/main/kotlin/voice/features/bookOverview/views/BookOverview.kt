@@ -389,7 +389,7 @@ private fun HomeCurrentBooks(
 ) {
   val (minCellSize, contentType) = when (layoutMode) {
     BookOverviewLayoutMode.List -> 320.dp to "list"
-    BookOverviewLayoutMode.Grid -> 140.dp to "grid"
+    BookOverviewLayoutMode.Grid -> 96.dp to "grid"
   }
   LazyVerticalGrid(
     columns = GridCells.Adaptive(minSize = minCellSize),
