@@ -59,6 +59,9 @@
     <string name="book_tab_home">Home</string>
     <string name="book_tab_library">Library</string>
     <string name="book_home_empty">No books to continue yet.</string>
+    <string name="book_header_ready_to_listen">Ready to listen</string>
+    <string name="book_home_ready_empty">No other books on device yet.</string>
+    <string name="book_browse_playable_books_subtitle">On this device</string>
     <string name="close">Close</string>
     <string name="delete">Delete</string>
     <string name="add">Add</string>

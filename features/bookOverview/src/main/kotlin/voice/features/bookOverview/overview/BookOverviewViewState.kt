@@ -4,12 +4,16 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
 import voice.core.data.BookId
 import voice.core.ui.ImmutableFile
+import voice.features.bookOverview.browse.AuthorViewState
 import voice.features.bookOverview.search.BookSearchViewState
 import kotlin.time.Duration
 
 @Immutable
 data class BookOverviewViewState(
   val books: Map<BookOverviewSection, Map<BookId, State<BookOverviewItemViewState>>>,
+  val homeContinueListening: Map<BookId, State<BookOverviewItemViewState>>,
+  val homeReadyToListen: Map<BookId, State<BookOverviewItemViewState>>,
+  val homePlayableAuthors: List<AuthorViewState>,
   val layoutMode: BookOverviewLayoutMode,
   val playButtonState: PlayButtonState?,
   val miniPlayer: MiniPlayerViewState?,
@@ -24,6 +28,9 @@ data class BookOverviewViewState(
   companion object {
     val Loading = BookOverviewViewState(
       books = mapOf(),
+      homeContinueListening = mapOf(),
+      homeReadyToListen = mapOf(),
+      homePlayableAuthors = emptyList(),
       layoutMode = BookOverviewLayoutMode.List,
       playButtonState = null,
       miniPlayer = null,

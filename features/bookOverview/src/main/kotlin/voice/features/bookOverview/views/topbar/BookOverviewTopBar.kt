@@ -69,6 +69,9 @@ private fun BookOverviewTopBarPreview() {
     BookOverviewTopBar(
       viewState = BookOverviewViewState(
         books = emptyMap(),
+        homeContinueListening = emptyMap(),
+        homeReadyToListen = emptyMap(),
+        homePlayableAuthors = emptyList(),
         layoutMode = BookOverviewLayoutMode.List,
         playButtonState = BookOverviewViewState.PlayButtonState.Paused,
         miniPlayer = null,

@@ -1,22 +1,15 @@
 package voice.features.bookOverview.browse
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,17 +19,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.retain.retain
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
-import coil.compose.AsyncImage
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.IntoSet
@@ -134,71 +122,12 @@ private fun BrowseAuthorsView(
         items = viewState.authors,
         key = { it.key },
       ) { author ->
-        AuthorCell(
+        AuthorGridCell(
           author = author,
           onClick = { onAuthorClick(author.filter) },
+          modifier = Modifier.fillMaxWidth(),
         )
       }
     }
-  }
-}
-
-@Composable
-private fun AuthorCell(
-  author: AuthorViewState,
-  onClick: () -> Unit,
-) {
-  Column(
-    modifier = Modifier
-      .fillMaxWidth()
-      .clip(MaterialTheme.shapes.medium)
-      .clickable(onClick = onClick)
-      .padding(8.dp),
-    horizontalAlignment = Alignment.CenterHorizontally,
-  ) {
-    Box(
-      modifier = Modifier
-        .fillMaxWidth()
-        .aspectRatio(1f)
-        .clip(CircleShape)
-        .background(MaterialTheme.colorScheme.surfaceVariant),
-      contentAlignment = Alignment.Center,
-    ) {
-      val image = author.image
-      if (image != null) {
-        AsyncImage(
-          model = image.model(),
-          contentDescription = null,
-          contentScale = ContentScale.Crop,
-          modifier = Modifier.fillMaxSize(),
-        )
-      } else {
-        Icon(
-          imageVector = Icons.Outlined.Person,
-          contentDescription = null,
-          tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-    }
-
-    Text(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(top = 8.dp),
-      text = author.displayName,
-      style = MaterialTheme.typography.titleSmall,
-      color = MaterialTheme.colorScheme.onSurface,
-      textAlign = TextAlign.Center,
-      maxLines = 2,
-      overflow = TextOverflow.Ellipsis,
-    )
-
-    Text(
-      modifier = Modifier.fillMaxWidth(),
-      text = author.bookCount.toString(),
-      style = MaterialTheme.typography.labelSmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      textAlign = TextAlign.Center,
-    )
   }
 }

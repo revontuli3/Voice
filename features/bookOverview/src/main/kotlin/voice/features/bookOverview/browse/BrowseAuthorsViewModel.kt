@@ -8,7 +8,9 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import voice.core.data.Book
+import voice.core.data.BookSource
 import voice.core.data.repo.BookRepository
+import voice.core.plex.api.PlexArtist
 import voice.core.plex.api.PlexArtistRepository
 import voice.core.plex.api.PlexBookRepository
 import voice.core.plex.api.PlexLibraryId
@@ -18,6 +20,7 @@ import voice.navigation.AuthorFilter
 import voice.navigation.BrowseSource
 import voice.navigation.Destination
 import voice.navigation.Navigator
+import voice.features.bookOverview.overview.isOnDevicePlayable
 
 @AssistedInject
 class BrowseAuthorsViewModel(
@@ -46,6 +49,9 @@ class BrowseAuthorsViewModel(
         id = source.id,
         unknownLabel = unknownLabel,
         allAuthorsLabel = allAuthorsLabel,
+      )
+      BrowseSource.AllPlayable -> allPlayableAuthorsViewState(
+        unknownLabel = unknownLabel,
       )
     }
   }
@@ -156,6 +162,54 @@ class BrowseAuthorsViewModel(
     )
   }
 
+  @Composable
+  private fun allPlayableAuthorsViewState(
+    unknownLabel: String,
+  ): BrowseAuthorsViewState {
+    val books = remember { bookRepository.flow() }
+      .collectAsState(initial = emptyList()).value
+    val authorImages = remember { localAuthorImageProvider.authorImagesByName() }
+      .collectAsState(initial = emptyMap()).value
+    val artistsByLibrary = remember { plexArtistRepository.artistsByLibrary }
+      .collectAsState(initial = emptyMap()).value
+
+    val playable = books.filter { it.isOnDevicePlayable() }
+    val grouped = playable.groupBy { it.content.author?.takeIf { name -> name.isNotBlank() } }
+
+    val namedAuthors = grouped
+      .filterKeys { it != null }
+      .entries
+      .sortedBy { (author, _) -> author!!.lowercase() }
+      .map { (author, list) ->
+        AuthorViewState(
+          key = author!!,
+          displayName = author,
+          filter = AuthorFilter.Named(author),
+          bookCount = list.size,
+          image = authorImageForPlayable(author, list, authorImages, artistsByLibrary),
+        )
+      }
+
+    val unknownBooks = grouped[null].orEmpty()
+    val unknownEntry = if (unknownBooks.isNotEmpty()) {
+      AuthorViewState(
+        key = UNKNOWN_KEY,
+        displayName = unknownLabel,
+        filter = AuthorFilter.Unknown,
+        bookCount = unknownBooks.size,
+        image = authorImageForPlayable(null, unknownBooks, authorImages, artistsByLibrary),
+      )
+    } else {
+      null
+    }
+
+    val subtitle = stringResource(StringsR.string.book_browse_playable_books_subtitle)
+    return BrowseAuthorsViewState(
+      title = subtitle,
+      authors = namedAuthors + listOfNotNull(unknownEntry),
+    )
+  }
+
   private fun allAuthorsRow(
     totalCount: Int,
     label: String,
@@ -175,6 +229,30 @@ class BrowseAuthorsViewModel(
     if (author != null) {
       val folderImage = authorImages[author.lowercase()]
       if (folderImage != null) return AuthorImage.LocalUri(folderImage)
+    }
+    val cover = books.firstNotNullOfOrNull { it.content.cover }
+    if (cover != null) return AuthorImage.LocalFile(cover)
+    return null
+  }
+
+  private fun authorImageForPlayable(
+    author: String?,
+    books: List<Book>,
+    authorImages: Map<String, android.net.Uri>,
+    artistsByLibrary: Map<PlexLibraryId, List<PlexArtist>>,
+  ): AuthorImage? {
+    if (author != null) {
+      val folderImage = authorImages[author.lowercase()]
+      if (folderImage != null) return AuthorImage.LocalUri(folderImage)
+    }
+    for (book in books) {
+      if (book.content.source != BookSource.PlexDownload) continue
+      val storageKey = book.content.plexLibraryStorageKey ?: continue
+      val libraryId = PlexLibraryId.fromStorageKey(storageKey) ?: continue
+      val name = book.content.author?.takeIf { it.isNotBlank() } ?: author ?: continue
+      val matchingArtist = artistsByLibrary[libraryId]
+        ?.firstOrNull { it.title.equals(name, ignoreCase = true) }
+      matchingArtist?.thumbUrl?.let { return AuthorImage.Remote(it) }
     }
     val cover = books.firstNotNullOfOrNull { it.content.cover }
     if (cover != null) return AuthorImage.LocalFile(cover)

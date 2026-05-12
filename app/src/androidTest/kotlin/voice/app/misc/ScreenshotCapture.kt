@@ -19,9 +19,9 @@ import voice.core.data.BookId
 import voice.core.logging.api.Logger
 import voice.core.ui.ImmutableFile
 import voice.core.ui.formatTime
-import voice.features.bookOverview.overview.BookOverviewCategory
 import voice.features.bookOverview.overview.BookOverviewItemViewState
 import voice.features.bookOverview.overview.BookOverviewLayoutMode
+import voice.features.bookOverview.overview.BookOverviewSection
 import voice.features.bookOverview.overview.BookOverviewViewState
 import voice.features.bookOverview.search.BookSearchViewState
 import voice.features.bookOverview.views.BookOverviewPreview
@@ -170,18 +170,23 @@ class ScreenshotCapture {
         name = name,
         author = foreNames.removeFirst() + " " + sureNames.removeFirst(),
         cover = ImmutableFile(cover),
+        coverUrl = null,
         progress = Random.nextFloat(),
+        isFinished = false,
+        isPlex = false,
+        downloaded = false,
         id = BookId("$index"),
         remainingTime = formatTime(5.hours.inWholeMilliseconds + Random.nextLong(10.hours.inWholeMilliseconds)),
       )
     }
+    val withStates = books.associate { it.id to mutableStateOf(it) }
+    val notStarted = books.drop(3).map { it.copy(progress = 0F) }.associate { it.id to mutableStateOf(it) }
     return BookOverviewViewState(
-      books = mapOf(
-        BookOverviewCategory.CURRENT to books.take(3),
-        BookOverviewCategory.NOT_STARTED to books.drop(3).map { it.copy(progress = 0F) },
-      ).mapValues {
-        it.value.associate { it.id to mutableStateOf(it) }
-      },
+      books = mapOf(BookOverviewSection.Local to withStates + notStarted),
+      homeContinueListening = books.take(3).associate { it.id to mutableStateOf(it) },
+      homeReadyToListen = notStarted,
+      homePlayableAuthors = emptyList(),
+      miniPlayer = null,
       layoutMode = BookOverviewLayoutMode.List,
       playButtonState = BookOverviewViewState.PlayButtonState.Paused,
       showAddBookHint = false,

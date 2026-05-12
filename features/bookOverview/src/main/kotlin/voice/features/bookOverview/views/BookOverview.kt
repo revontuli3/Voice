@@ -3,7 +3,6 @@ package voice.features.bookOverview.views
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,8 +10,12 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -21,6 +24,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.AlertDialog
@@ -54,6 +58,7 @@ import kotlinx.coroutines.launch
 import voice.core.common.rootGraphAs
 import voice.core.data.BookId
 import voice.core.ui.VoiceTheme
+import voice.features.bookOverview.browse.AuthorGridCell
 import voice.features.bookOverview.bottomSheet.BottomSheetContent
 import voice.features.bookOverview.bottomSheet.BottomSheetItem
 import voice.features.bookOverview.deleteBook.DeleteBookDialog
@@ -67,6 +72,7 @@ import voice.features.bookOverview.overview.PlexDownloadDialogState
 import voice.core.plex.api.PlexDownloadState
 import voice.features.bookOverview.search.BookSearchViewState
 import voice.features.bookOverview.views.topbar.BookOverviewTopBar
+import voice.navigation.AuthorFilter
 import voice.navigation.Destination
 import voice.navigation.NavEntryProvider
 import java.util.UUID
@@ -122,6 +128,7 @@ fun BookOverviewScreen(modifier: Modifier = Modifier) {
       showBottomSheet = true
     },
     onSectionClick = bookOverviewViewModel::onSectionClick,
+    onHomeAuthorClick = bookOverviewViewModel::onHomeAuthorClick,
     onPlayButtonClick = bookOverviewViewModel::playPause,
     onRewindClick = bookOverviewViewModel::rewind,
     onFastForwardClick = bookOverviewViewModel::fastForward,
@@ -251,6 +258,7 @@ internal fun BookOverview(
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
   onSectionClick: (BookOverviewSection) -> Unit,
+  onHomeAuthorClick: (AuthorFilter) -> Unit,
   onPlayButtonClick: () -> Unit,
   onRewindClick: () -> Unit,
   onFastForwardClick: () -> Unit,
@@ -327,25 +335,12 @@ internal fun BookOverview(
         .consumeWindowInsets(contentPadding),
     ) { page ->
       if (page == 0) {
-        val current = viewState.books.values
-          .flatMap { it.entries }
-          .associate { it.toPair() }
-          .filterValues { it.value.progress > 0f && it.value.progress < 0.999f }
-        if (current.isEmpty()) {
-          Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-          ) {
-            Text(text = stringResource(StringsR.string.book_home_empty))
-          }
-          return@HorizontalPager
-        }
-
-        HomeCurrentBooks(
+        HomeTab(
           layoutMode = viewState.layoutMode,
-          books = current,
+          viewState = viewState,
           onBookClick = onBookClick,
           onBookLongClick = onBookLongClick,
+          onHomeAuthorClick = onHomeAuthorClick,
           showPermissionBugCard = viewState.showStoragePermissionBugCard,
           onPermissionBugCardClick = onPermissionBugCardClick,
         )
@@ -379,53 +374,128 @@ internal fun BookOverview(
 }
 
 @Composable
-private fun HomeCurrentBooks(
+private fun HomeTab(
   layoutMode: BookOverviewLayoutMode,
-  books: Map<BookId, State<BookOverviewItemViewState>>,
+  viewState: BookOverviewViewState,
   onBookClick: (BookId) -> Unit,
   onBookLongClick: (BookId) -> Unit,
+  onHomeAuthorClick: (AuthorFilter) -> Unit,
   showPermissionBugCard: Boolean,
   onPermissionBugCardClick: () -> Unit,
 ) {
-  val (minCellSize, contentType) = when (layoutMode) {
-    BookOverviewLayoutMode.List -> 320.dp to "list"
-    BookOverviewLayoutMode.Grid -> 96.dp to "grid"
-  }
-  LazyVerticalGrid(
-    columns = GridCells.Adaptive(minSize = minCellSize),
+  LazyColumn(
     verticalArrangement = Arrangement.spacedBy(8.dp),
-    horizontalArrangement = Arrangement.spacedBy(8.dp),
     contentPadding = PaddingValues(top = 24.dp, start = 8.dp, end = 8.dp, bottom = 16.dp),
   ) {
-    item(
-      span = { GridItemSpan(maxLineSpan) },
-      key = "header:current",
-      contentType = "header",
-    ) {
-      Header(
-        section = BookOverviewSection.Current,
-        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-      )
-    }
-
     if (showPermissionBugCard) {
-      item(
-        span = { GridItemSpan(maxLineSpan) },
-        key = "permissionBugCard",
-        contentType = "permissionBugCard",
-      ) {
+      item {
         PermissionBugCard(onPermissionBugCardClick)
       }
     }
 
+    item {
+      Header(
+        section = BookOverviewSection.Current,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp),
+      )
+    }
+
+    if (viewState.homeContinueListening.isEmpty()) {
+      item {
+        Text(
+          text = stringResource(StringsR.string.book_home_empty),
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+      }
+    } else {
+      item {
+        HomeBookRow(
+          layoutMode = layoutMode,
+          books = viewState.homeContinueListening,
+          onBookClick = onBookClick,
+          onBookLongClick = onBookLongClick,
+        )
+      }
+    }
+
+    item {
+      Header(
+        section = BookOverviewSection.ReadyToListen,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp),
+      )
+    }
+
+    if (viewState.homeReadyToListen.isEmpty()) {
+      item {
+        Text(
+          text = stringResource(StringsR.string.book_home_ready_empty),
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+      }
+    } else {
+      item {
+        HomeBookRow(
+          layoutMode = layoutMode,
+          books = viewState.homeReadyToListen,
+          onBookClick = onBookClick,
+          onBookLongClick = onBookLongClick,
+        )
+      }
+    }
+
+    if (viewState.homePlayableAuthors.isNotEmpty()) {
+      item {
+        Header(
+          section = BookOverviewSection.PlayableAuthors,
+          modifier = Modifier.padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp),
+        )
+      }
+      item(key = "home:authors:row") {
+        LazyRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          contentPadding = PaddingValues(horizontal = 8.dp),
+        ) {
+          items(
+            items = viewState.homePlayableAuthors,
+            key = { it.key },
+            contentType = { "author" },
+          ) { author ->
+            AuthorGridCell(
+              author = author,
+              onClick = { onHomeAuthorClick(author.filter) },
+              modifier = Modifier.width(140.dp),
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun HomeBookRow(
+  layoutMode: BookOverviewLayoutMode,
+  books: Map<BookId, State<BookOverviewItemViewState>>,
+  onBookClick: (BookId) -> Unit,
+  onBookLongClick: (BookId) -> Unit,
+) {
+  LazyRow(
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    contentPadding = PaddingValues(horizontal = 8.dp),
+  ) {
     items(
       items = books.toList(),
       key = { (bookId, _) -> bookId.value },
-      contentType = { "item:$contentType" },
+      contentType = { "item" },
     ) { (_, bookState) ->
       when (layoutMode) {
         BookOverviewLayoutMode.List -> {
           ListBookRow(
+            modifier = Modifier.width(320.dp),
             book = bookState.value,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
@@ -433,6 +503,7 @@ private fun HomeCurrentBooks(
         }
         BookOverviewLayoutMode.Grid -> {
           GridBook(
+            modifier = Modifier.width(140.dp),
             book = bookState.value,
             onBookClick = onBookClick,
             onBookLongClick = onBookLongClick,
@@ -457,6 +528,7 @@ fun BookOverviewPreview(
       onBookClick = {},
       onBookLongClick = {},
       onSectionClick = {},
+      onHomeAuthorClick = {},
       onPlayButtonClick = {},
       onRewindClick = {},
       onFastForwardClick = {},
@@ -502,6 +574,9 @@ internal class BookOverviewPreviewParameterProvider : PreviewParameterProvider<B
           title = "Audiobooks (Home Server)",
         ) to emptyMap(),
       ),
+      homeContinueListening = mapOf(),
+      homeReadyToListen = mapOf(),
+      homePlayableAuthors = emptyList(),
       layoutMode = BookOverviewLayoutMode.List,
       playButtonState = BookOverviewViewState.PlayButtonState.Paused,
       miniPlayer = null,

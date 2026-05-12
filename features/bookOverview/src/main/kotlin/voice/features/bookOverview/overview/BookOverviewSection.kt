@@ -28,6 +28,20 @@ sealed interface BookOverviewSection {
       .thenByDescending { it.content.addedAt }
   }
 
+  data object ReadyToListen : BookOverviewSection {
+    override val id: String = "ready_to_listen"
+    override val titleRes: Int = StringsR.string.book_header_ready_to_listen
+    override val title: String? = null
+    override val comparator: Comparator<Book> = BookComparator.ByName
+  }
+
+  data object PlayableAuthors : BookOverviewSection {
+    override val id: String = "playable_authors"
+    override val titleRes: Int = StringsR.string.book_authors_title
+    override val title: String? = null
+    override val comparator: Comparator<Book> = BookComparator.ByName
+  }
+
   data class PlexLibrary(
     override val id: String,
     override val title: String,

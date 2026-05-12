@@ -3,6 +3,7 @@ package voice.features.bookOverview.overview
 import androidx.compose.runtime.Immutable
 import voice.core.data.Book
 import voice.core.data.BookId
+import voice.core.data.BookSource
 import voice.core.logging.api.Logger
 import voice.core.ui.ImmutableFile
 import voice.core.ui.formatTime
@@ -29,8 +30,8 @@ internal fun Book.toItemViewState() = BookOverviewItemViewState(
   id = id,
   progress = progress(),
   isFinished = content.isFinished,
-  isPlex = false,
-  downloaded = false,
+  isPlex = content.source == BookSource.PlexDownload,
+  downloaded = content.source == BookSource.PlexDownload,
   remainingTime = formatTime(duration - position),
 )
 

@@ -16,6 +16,9 @@ sealed interface BrowseSource {
 
   @Serializable
   data class PlexLibrary(val id: PlexLibraryId) : BrowseSource
+
+  @Serializable
+  data object AllPlayable : BrowseSource
 }
 
 @Serializable

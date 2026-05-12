@@ -34,10 +34,12 @@ import voice.core.playback.playstate.PlayStateManager
 import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
+import voice.core.plex.api.PlexArtistRepository
 import voice.core.plex.api.PlexBookRepository
 import voice.core.plex.api.PlexDownloadManager
 import voice.core.plex.api.PlexLibraryRepository
 import voice.core.plex.api.PlexLibraryId
+import voice.features.bookOverview.browse.LocalAuthorImageProvider
 import voice.core.ui.GridCount
 import voice.features.bookOverview.book
 import voice.navigation.Navigator
@@ -86,7 +88,13 @@ class BookOverviewViewModelTest {
       plexBookRepository = mockk<PlexBookRepository>(relaxed = true) {
         every { booksByLibrary } returns MutableStateFlow(emptyMap())
       },
+      plexArtistRepository = mockk<PlexArtistRepository>(relaxed = true) {
+        every { artistsByLibrary } returns MutableStateFlow(emptyMap())
+      },
       plexDownloadManager = mockk<PlexDownloadManager>(relaxed = true),
+      localAuthorImageProvider = mockk<LocalAuthorImageProvider>(relaxed = true) {
+        every { authorImagesByName() } returns MutableStateFlow(emptyMap())
+      },
       deviceHasStoragePermissionBug = mockk<DeviceHasStoragePermissionBug> {
         every { hasBug } returns MutableStateFlow(false)
       },

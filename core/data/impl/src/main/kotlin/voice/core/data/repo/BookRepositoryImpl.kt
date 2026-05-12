@@ -10,6 +10,7 @@ import kotlinx.coroutines.sync.withLock
 import voice.core.data.Book
 import voice.core.data.BookContent
 import voice.core.data.BookId
+import voice.core.data.BookSource
 import voice.core.logging.api.Logger
 
 @SingleIn(AppScope::class)
@@ -27,7 +28,7 @@ public class BookRepositoryImpl(
     mutex.withLock {
       if (warmedUp) return@withLock
       val chapters = contentRepo.all()
-        .filter { it.isActive }
+        .filter { it.isActive || it.source == BookSource.PlexDownload }
         .flatMap { it.chapters }
       chapterRepo.warmup(chapters)
       warmedUp = true
@@ -37,7 +38,8 @@ public class BookRepositoryImpl(
   override fun flow(): Flow<List<Book>> {
     return contentRepo.flow()
       .map { contents ->
-        contents.filter { it.isActive }
+        contents
+          .filter { it.isActive || it.source == BookSource.PlexDownload }
           .mapNotNull { content ->
             content.book()
           }
@@ -46,7 +48,7 @@ public class BookRepositoryImpl(
 
   override suspend fun all(): List<Book> {
     return contentRepo.all()
-      .filter { it.isActive }
+      .filter { it.isActive || it.source == BookSource.PlexDownload }
       .mapNotNull { it.book() }
   }
 

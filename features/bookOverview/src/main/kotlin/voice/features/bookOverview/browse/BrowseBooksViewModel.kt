@@ -30,6 +30,7 @@ import voice.core.ui.GridCount
 import voice.features.bookOverview.overview.BookOverviewItemViewState
 import voice.features.bookOverview.overview.BookOverviewLayoutMode
 import voice.features.bookOverview.overview.BookOverviewSection
+import voice.features.bookOverview.overview.isOnDevicePlayable
 import voice.features.bookOverview.overview.toItemViewState
 import voice.navigation.AuthorFilter
 import voice.navigation.BrowseSource
@@ -92,6 +93,10 @@ class BrowseBooksViewModel(
         title = title,
         layoutMode = layoutMode,
       )
+      BrowseSource.AllPlayable -> allPlayableViewState(
+        title = title,
+        layoutMode = layoutMode,
+      )
     }
   }
 
@@ -110,6 +115,33 @@ class BrowseBooksViewModel(
       .map { it.toItemViewState() }
 
     val subtitle = stringResource(StringsR.string.book_header_local)
+
+    return BrowseBooksViewState(
+      title = title,
+      subtitle = subtitle,
+      layoutMode = layoutMode,
+      books = filtered,
+    )
+  }
+
+  @Composable
+  private fun allPlayableViewState(
+    title: String,
+    layoutMode: BookOverviewLayoutMode,
+  ): BrowseBooksViewState {
+    val books = remember { bookRepository.flow() }
+      .collectAsState(initial = emptyList()).value
+
+    val filtered = books
+      .filter { it.isOnDevicePlayable() }
+      .filter { it.matchesFilter() }
+      .sortedWith(
+        compareByDescending<Book> { it.content.addedAt }
+          .thenBy { it.content.name },
+      )
+      .map { it.toItemViewState() }
+
+    val subtitle = stringResource(StringsR.string.book_browse_playable_books_subtitle)
 
     return BrowseBooksViewState(
       title = title,

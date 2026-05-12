@@ -1,6 +1,7 @@
 package voice.features.bookOverview.overview
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.runtime.Composable
@@ -14,6 +15,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.datastore.core.DataStore
 import dev.zacsweers.metro.Inject
@@ -43,6 +45,8 @@ import voice.core.playback.playstate.PlayStateManager
 import voice.core.scanner.DeviceHasStoragePermissionBug
 import voice.core.scanner.MediaScanTrigger
 import voice.core.search.BookSearch
+import voice.core.plex.api.PlexArtist
+import voice.core.plex.api.PlexArtistRepository
 import voice.core.plex.api.PlexLibraryId
 import voice.core.plex.api.PlexBookRepository
 import voice.core.plex.api.PlexDownloadId
@@ -51,11 +55,17 @@ import voice.core.plex.api.PlexLibraryRepository
 import voice.navigation.BrowseSource
 import voice.core.ui.GridCount
 import voice.core.ui.ImmutableFile
+import voice.features.bookOverview.browse.AuthorImage
+import voice.features.bookOverview.browse.AuthorViewState
+import voice.features.bookOverview.browse.BrowseAuthorsViewModel
+import voice.features.bookOverview.browse.LocalAuthorImageProvider
 import voice.features.bookOverview.di.BookOverviewScope
 import voice.features.bookOverview.search.BookSearchViewState
+import voice.navigation.AuthorFilter
 import voice.navigation.Destination
 import voice.navigation.Navigator
 import kotlin.time.Duration.Companion.milliseconds
+import voice.core.strings.R as StringsR
 
 @SingleIn(BookOverviewScope::class)
 @Inject
@@ -75,7 +85,9 @@ class BookOverviewViewModel(
   private val contentRepo: BookContentRepo,
   private val plexLibraryRepository: PlexLibraryRepository,
   private val plexBookRepository: PlexBookRepository,
+  private val plexArtistRepository: PlexArtistRepository,
   private val plexDownloadManager: PlexDownloadManager,
+  private val localAuthorImageProvider: LocalAuthorImageProvider,
   private val deviceHasStoragePermissionBug: DeviceHasStoragePermissionBug,
   @ExperimentalPlaybackPersistenceQualifier
   private val experimentalPlaybackPersistenceFeatureFlag: FeatureFlag<Boolean>,
@@ -101,7 +113,7 @@ class BookOverviewViewModel(
       .collectAsState(initial = PlayStateManager.PlayState.Paused).value
     val hasStoragePermissionBug = remember { deviceHasStoragePermissionBug.hasBug }
       .collectAsState().value
-    val books = remember { repo.flow() }
+    val roomBooks = remember { repo.flow() }
       .collectAsState(initial = emptyList()).value
     val plexLibraries = remember { plexLibraryRepository.libraries }
       .collectAsState(initial = emptyList()).value
@@ -117,7 +129,7 @@ class BookOverviewViewModel(
       .collectAsState(initial = null).value
       ?: return BookOverviewViewState.Loading
 
-    val noBooks = !scannerActive && books.isEmpty()
+    val noBooks = !scannerActive && roomBooks.isEmpty()
 
     val layoutMode = when (gridMode) {
       GridMode.LIST -> BookOverviewLayoutMode.List
@@ -189,56 +201,94 @@ class BookOverviewViewModel(
       null
     }
 
-    return BookOverviewViewState(
-      layoutMode = layoutMode,
-      books = buildMap {
-        val localSection = BookOverviewSection.Local
-        put(
-          localSection,
-          books
-            .filter { it.content.source == BookSource.User }
-            .sortedWith(localSection.comparator)
-            .associate { book ->
-              book.id to book.itemViewState(
-                currentBookId = currentBookId,
-                livePlaybackState = { livePlaybackState.value },
-              )
-            },
-        )
+    val booksBySection = buildMap {
+      val localSection = BookOverviewSection.Local
+      put(
+        localSection,
+        roomBooks
+          .filter { it.content.source == BookSource.User }
+          .sortedWith(localSection.comparator)
+          .associate { book ->
+            book.id to book.itemViewState(
+              currentBookId = currentBookId,
+              livePlaybackState = { livePlaybackState.value },
+            )
+          },
+      )
 
-        val byId = plexLibraries.associateBy { it.id }
-        plexSelected
-          .mapNotNull { id ->
-            val info = byId[id] ?: return@mapNotNull null
-            BookOverviewSection.PlexLibrary(
-              id = "plex:${id.storageKey}",
-              title = "${info.title} (${info.serverName})",
+      val byId = plexLibraries.associateBy { it.id }
+      plexSelected
+        .mapNotNull { id ->
+          val info = byId[id] ?: return@mapNotNull null
+          BookOverviewSection.PlexLibrary(
+            id = "plex:${id.storageKey}",
+            title = "${info.title} (${info.serverName})",
+          )
+        }
+        .sortedBy { it.title }
+        .forEach { section ->
+          val id = PlexLibraryId.fromStorageKey(section.id.removePrefix("plex:")) ?: return@forEach
+          val plexBooks = plexBooksByLibrary[id].orEmpty()
+          val items = plexBooks.associate { plexBook ->
+            val bookId = BookId("plex:${id.storageKey}:${plexBook.id}")
+            bookId to rememberUpdatedState(
+              BookOverviewItemViewState(
+                name = plexBook.title,
+                author = plexBook.author,
+                cover = null,
+                coverUrl = plexBook.coverUrl,
+                progress = plexBook.progress,
+                isFinished = plexBook.isFinished,
+                isPlex = true,
+                downloaded = plexBook.downloaded,
+                id = bookId,
+                remainingTime = "",
+              ),
             )
           }
-          .sortedBy { it.title }
-          .forEach { section ->
-            val id = PlexLibraryId.fromStorageKey(section.id.removePrefix("plex:")) ?: return@forEach
-            val plexBooks = plexBooksByLibrary[id].orEmpty()
-            val items = plexBooks.associate { plexBook ->
-              val bookId = BookId("plex:${id.storageKey}:${plexBook.id}")
-              bookId to rememberUpdatedState(
-                BookOverviewItemViewState(
-                  name = plexBook.title,
-                  author = plexBook.author,
-                  cover = null,
-                  coverUrl = plexBook.coverUrl,
-                  progress = plexBook.progress,
-                  isFinished = plexBook.isFinished,
-                  isPlex = true,
-                  downloaded = plexBook.downloaded,
-                  id = bookId,
-                  remainingTime = "",
-                ),
-              )
-            }
-            put(section, items)
-          }
-      },
+          put(section, items)
+        }
+    }
+
+    val homeContinueListening = booksBySection.values
+      .asSequence()
+      .flatMap { it.entries.asSequence() }
+      .filter { (_, state) ->
+        val v = state.value
+        v.progress > 0f && v.progress < 0.999f
+      }
+      .associate { it.key to it.value }
+
+    val playableRoomBooks = roomBooks.filter { it.isOnDevicePlayable() }
+    val continueIds = homeContinueListening.keys
+    val homeReadyToListen = playableRoomBooks
+      .filter { it.id !in continueIds }
+      .sortedWith(
+        compareByDescending<Book> { it.content.addedAt }
+          .thenBy { it.content.name },
+      )
+      .associate { book ->
+        book.id to book.itemViewState(
+          currentBookId = currentBookId,
+          livePlaybackState = { livePlaybackState.value },
+        )
+      }
+
+    val unknownAuthorLabel = stringResource(StringsR.string.book_author_unknown)
+    val authorImages = remember { localAuthorImageProvider.authorImagesByName() }
+      .collectAsState(initial = emptyMap()).value
+    val artistsByLibrary = remember { plexArtistRepository.artistsByLibrary }
+      .collectAsState(initial = emptyMap()).value
+    val homePlayableAuthors = remember(roomBooks, authorImages, artistsByLibrary, unknownAuthorLabel) {
+      buildPlayableAuthors(roomBooks.filter { it.isOnDevicePlayable() }, unknownAuthorLabel, authorImages, artistsByLibrary)
+    }
+
+    return BookOverviewViewState(
+      layoutMode = layoutMode,
+      books = booksBySection,
+      homeContinueListening = homeContinueListening,
+      homeReadyToListen = homeReadyToListen,
+      homePlayableAuthors = homePlayableAuthors,
       playButtonState = if (playState == PlayStateManager.PlayState.Playing) {
         BookOverviewViewState.PlayButtonState.Playing
       } else {
@@ -250,7 +300,7 @@ class BookOverviewViewModel(
       } else {
         noBooks
       },
-      showSearchIcon = books.isNotEmpty(),
+      showSearchIcon = roomBooks.isNotEmpty(),
       isLoading = scannerActive,
       searchActive = searchActive,
       searchViewState = bookSearchViewState,
@@ -358,9 +408,16 @@ class BookOverviewViewModel(
         val id = PlexLibraryId.fromStorageKey(section.id.removePrefix("plex:")) ?: return
         BrowseSource.PlexLibrary(id)
       }
-      BookOverviewSection.Current -> return
+      BookOverviewSection.Current,
+      BookOverviewSection.ReadyToListen,
+      BookOverviewSection.PlayableAuthors,
+      -> return
     }
     navigator.goTo(Destination.BrowseAuthors(source = source))
+  }
+
+  fun onHomeAuthorClick(filter: AuthorFilter) {
+    navigator.goTo(Destination.BrowseBooks(source = BrowseSource.AllPlayable, author = filter))
   }
 
   fun onSearchActiveChange(active: Boolean) {
@@ -407,6 +464,65 @@ class BookOverviewViewModel(
       )
     }
   }
+}
+
+private fun buildPlayableAuthors(
+  playable: List<Book>,
+  unknownLabel: String,
+  authorImages: Map<String, Uri>,
+  artistsByLibrary: Map<PlexLibraryId, List<PlexArtist>>,
+): List<AuthorViewState> {
+  val grouped = playable.groupBy { it.content.author?.takeIf { name -> name.isNotBlank() } }
+  val namedAuthors = grouped
+    .filterKeys { it != null }
+    .entries
+    .sortedBy { (author, _) -> author!!.lowercase() }
+    .map { (author, list) ->
+      AuthorViewState(
+        key = author!!,
+        displayName = author,
+        filter = AuthorFilter.Named(author),
+        bookCount = list.size,
+        image = authorImagePlayable(author, list, authorImages, artistsByLibrary),
+      )
+    }
+  val unknownBooks = grouped[null].orEmpty()
+  val unknownEntry = if (unknownBooks.isNotEmpty()) {
+    AuthorViewState(
+      key = BrowseAuthorsViewModel.UNKNOWN_KEY,
+      displayName = unknownLabel,
+      filter = AuthorFilter.Unknown,
+      bookCount = unknownBooks.size,
+      image = authorImagePlayable(null, unknownBooks, authorImages, artistsByLibrary),
+    )
+  } else {
+    null
+  }
+  return namedAuthors + listOfNotNull(unknownEntry)
+}
+
+private fun authorImagePlayable(
+  author: String?,
+  books: List<Book>,
+  authorImages: Map<String, Uri>,
+  artistsByLibrary: Map<PlexLibraryId, List<PlexArtist>>,
+): AuthorImage? {
+  if (author != null) {
+    val folderImage = authorImages[author.lowercase()]
+    if (folderImage != null) return AuthorImage.LocalUri(folderImage)
+  }
+  for (book in books) {
+    if (book.content.source != BookSource.PlexDownload) continue
+    val storageKey = book.content.plexLibraryStorageKey ?: continue
+    val libraryId = PlexLibraryId.fromStorageKey(storageKey) ?: continue
+    val name = book.content.author?.takeIf { it.isNotBlank() } ?: author ?: continue
+    val matchingArtist = artistsByLibrary[libraryId]
+      ?.firstOrNull { it.title.equals(name, ignoreCase = true) }
+    matchingArtist?.thumbUrl?.let { return AuthorImage.Remote(it) }
+  }
+  val cover = books.firstNotNullOfOrNull { it.content.cover }
+  if (cover != null) return AuthorImage.LocalFile(cover)
+  return null
 }
 
 data class PlexDownloadDialogState(
